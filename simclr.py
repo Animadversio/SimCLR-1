@@ -9,6 +9,8 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from utils import save_config_file, accuracy, save_checkpoint
 
+from utils import accuracy, save_checkpoint, save_config_file
+
 torch.manual_seed(0)
 
 
@@ -66,7 +68,8 @@ class SimCLR(object):
         logging.info(f"Training with gpu: {self.args.disable_cuda}.")
 
         for epoch_counter in range(self.args.epochs):
-            for images, _ in tqdm(train_loader):
+            for images, _ in tqdm(train_loader): 
+                # Train loader have performed the augmentation; it returns a list of different augmented images. 
                 images = torch.cat(images, dim=0)
 
                 images = images.to(self.args.device)
