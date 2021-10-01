@@ -63,14 +63,15 @@ class SimCLR(object):
         logging.info(f"Training with gpu: {self.args.disable_cuda}.")
 
         for epoch_counter in range(self.args.epochs):
-            for images, _ in tqdm(train_loader):
+            for images, _ in tqdm(train_loader): 
+                # Train loader have performed the augmentation; it returns a list of different augmented images. 
                 images = torch.cat(images, dim=0)
 
                 images = images.to(self.args.device)
 
                 features = self.model(images)
-                logits, labels = self.info_nce_loss(features)
-                loss = self.criterion(logits, labels)
+                logits, labels = self.info_nce_loss(features)  # info nce loss to generate pseudo labels for all pairs
+                loss = self.criterion(logits, labels)  # do NCE loss for all pairs. 
 
                 self.optimizer.zero_grad()
                 if apex_support and self.args.fp16_precision:
