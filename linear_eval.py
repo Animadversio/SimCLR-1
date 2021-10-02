@@ -97,7 +97,7 @@ def create_data_loaders_from_arrays(X_train, y_train, X_test, y_test, batch_size
     return train_loader, test_loader
 
 
-def train(args, loader, simclr_model, model, criterion, optimizer):
+def eval_train(args, loader, simclr_model, model, criterion, optimizer):
     loss_epoch = 0
     accuracy_epoch = 0
     for step, (x, y) in enumerate(loader):
@@ -125,7 +125,7 @@ def train(args, loader, simclr_model, model, criterion, optimizer):
     return loss_epoch, accuracy_epoch
 
 
-def test(args, loader, simclr_model, model, criterion, optimizer):
+def eval_test(args, loader, simclr_model, model, criterion, optimizer):
     loss_epoch = 0
     accuracy_epoch = 0
     model.eval()
@@ -155,16 +155,79 @@ def get_resnet(arch, device, pretrained=False):
     return model
 
 
-def evaluation(resnet_model, args):
-    train_dataset, test_dataset = get_train_test_dataset(dataset)
+def evaluation(encoder, args):
+    proj_head = encoder.fc
+    n_features = encoder.fc.in_features
+    encoder.fc = Identity()
+
+    if args.dataset == "stl10":
+        train_dataset = torchvision.datasets.STL10(
+            args.dataset_dir, split="train", download=True,
+            transform=get_test_transform(size=args.image_size),
+        )
+        test_dataset = torchvision.datasets.STL10(
+            args.dataset_dir, split="test", download=True,
+            transform=get_test_transform(size=args.image_size),
+        )
+    elif args.dataset == "cifar10":
+        train_dataset = torchvision.datasets.CIFAR10(
+            args.dataset_dir, train=True, download=True,
+            transform=get_test_transform(size=args.image_size),
+        )
+        test_dataset = torchvision.datasets.CIFAR10(
+            args.dataset_dir, train=False, download=True,
+            transform=get_test_transform(size=args.image_size),
+        )
+    else:
+        raise NotImplementedError
+
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.logistic_batch_size,
         shuffle=True, drop_last=True, num_workers=args.workers)
+    
     test_loader = torch.utils.data.DataLoader(
         test_dataset, batch_size=args.logistic_batch_size,
         shuffle=False, drop_last=True, num_workers=args.workers,)
 
-    return 
+    print("### Creating features from pre-trained context model ###")
+    (train_X, train_y, test_X, test_y) = get_features(
+        encoder, train_loader, test_loader, args.device
+    )
+    arr_train_loader, arr_test_loader = create_data_loaders_from_arrays(
+        train_X, train_y, test_X, test_y, args.logistic_batch_size
+    )
+    ## Logistic Regression
+    n_classes = 10  # CIFAR-10 / STL-10
+    linearhead = LogisticRegression(n_features, n_classes)
+    linearhead = model.to(args.device)
+
+    optimizer = torch.optim.Adam(linearhead.parameters(), lr=3e-4)
+    criterion = torch.nn.CrossEntropyLoss()
+
+    for epoch in range(args.logistic_epochs):
+        loss_epoch, accuracy_epoch = eval_train(
+            args, arr_train_loader, encoder, linearhead, criterion, optimizer
+        )
+        if (1 + epoch) % 50 == 0:
+            print(
+    f"Epoch [{epoch}/{args.logistic_epochs}]\t Loss: {loss_epoch / len(arr_train_loader)}\t Accuracy: {accuracy_epoch / len(arr_train_loader)}"
+            )
+
+    final_train_loss = loss_epoch / len(arr_train_loader)
+    final_train_acc  = accuracy_epoch / len(arr_train_loader)
+    # final testing
+    loss_epoch, accuracy_epoch = eval_test(
+        args, arr_test_loader, encoder, linearhead, criterion, optimizer
+    )
+    print(
+        f"[FINAL]\t Loss: {loss_epoch / len(arr_test_loader)}\t Accuracy: {accuracy_epoch / len(arr_test_loader)}"
+    )
+    final_test_loss = loss_epoch / len(arr_test_loader)
+    final_test_acc  = accuracy_epoch / len(arr_test_loader)
+    
+    encoder.fc = proj_head
+
+    return  final_train_loss, final_train_acc, final_test_loss, final_test_acc
 
 
 if __name__ == "__main__":
