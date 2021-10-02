@@ -1,3 +1,15 @@
+import os
+import time
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+import torchvision
+from torchvision import datasets, transforms
+from torchvision.models import resnet50
+import numpy as np
+
+
 def showimg(image,figsize=[8,8],cmap=None):
   if type(image) in [tuple,list]:
     for i in range(len(image)):
@@ -14,6 +26,7 @@ def showimg(image,figsize=[8,8],cmap=None):
     plt.show()
   return figh,ax
 
+
 def image_standardize(image):
   if len(image.shape)==2:
     image = np.repeat(image[:,:,np.newaxis],3,axis=2)
@@ -26,6 +39,7 @@ def image_standardize(image):
   else:
     raise ValueError("Shape of image is %s error",image.shape)
   return image
+
 
 def resnet_forward(model, x: Tensor) -> Tensor:
   # See note [TorchScript super()]
