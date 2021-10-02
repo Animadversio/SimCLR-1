@@ -155,10 +155,10 @@ def get_resnet(arch, device, pretrained=False):
     return model
 
 
-def evaluation(encoder, args, logistic_batch_size=256):
+def evaluation(encoder, args, logistic_batch_size=256, logistic_epochs=500):
     args.image_size = 224
     if "data" in args: args.dataset_dir = args.data
-    
+
     proj_head = encoder.fc
     n_features = encoder.fc[0].in_features
     encoder.fc = nn.Identity()
@@ -207,13 +207,13 @@ def evaluation(encoder, args, logistic_batch_size=256):
     optimizer = torch.optim.Adam(linearhead.parameters(), lr=3e-4)
     criterion = torch.nn.CrossEntropyLoss()
 
-    for epoch in range(args.logistic_epochs):
+    for epoch in range(logistic_epochs):
         loss_epoch, accuracy_epoch = eval_train(
             args, arr_train_loader, encoder, linearhead, criterion, optimizer
         )
         if (1 + epoch) % 50 == 0:
             print(
-    f"Epoch [{epoch}/{args.logistic_epochs}]\t Loss: {loss_epoch / len(arr_train_loader)}\t Accuracy: {accuracy_epoch / len(arr_train_loader)}"
+    f"Epoch [{epoch}/{logistic_epochs}]\t Loss: {loss_epoch / len(arr_train_loader)}\t Accuracy: {accuracy_epoch / len(arr_train_loader)}"
             )
 
     final_train_loss = loss_epoch / len(arr_train_loader)
