@@ -243,28 +243,20 @@ if __name__ == "__main__":
 
     if args.dataset == "stl10":
         train_dataset = torchvision.datasets.STL10(
-            args.dataset_dir,
-            split="train",
-            download=True,
+            args.dataset_dir, split="train", download=True,
             transform=get_test_transform(size=args.image_size),
         )
         test_dataset = torchvision.datasets.STL10(
-            args.dataset_dir,
-            split="test",
-            download=True,
+            args.dataset_dir, split="test", download=True,
             transform=get_test_transform(size=args.image_size),
         )
     elif args.dataset == "cifar10":
         train_dataset = torchvision.datasets.CIFAR10(
-            args.dataset_dir,
-            train=True,
-            download=True,
+            args.dataset_dir, train=True, download=True,
             transform=get_test_transform(size=args.image_size),
         )
         test_dataset = torchvision.datasets.CIFAR10(
-            args.dataset_dir,
-            train=False,
-            download=True,
+            args.dataset_dir, train=False, download=True,
             transform=get_test_transform(size=args.image_size),
         )
     else:
@@ -320,7 +312,7 @@ if __name__ == "__main__":
     criterion = torch.nn.CrossEntropyLoss()
 
     for epoch in range(args.logistic_epochs):
-        loss_epoch, accuracy_epoch = train(
+        loss_epoch, accuracy_epoch = eval_train(
             args, arr_train_loader, encoder, model, criterion, optimizer
         )
         if (1 + epoch) % 50 == 0:
@@ -329,7 +321,7 @@ if __name__ == "__main__":
             )
 
     # final testing
-    loss_epoch, accuracy_epoch = test(
+    loss_epoch, accuracy_epoch = eval_test(
         args, arr_test_loader, encoder, model, criterion, optimizer
     )
     print(
