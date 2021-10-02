@@ -156,6 +156,9 @@ def get_resnet(arch, device, pretrained=False):
 
 
 def evaluation(encoder, args, logistic_batch_size=256):
+    args.image_size = 224
+    if "data" in args: args.dataset_dir = args.data
+    
     proj_head = encoder.fc
     n_features = encoder.fc[0].in_features
     encoder.fc = nn.Identity()
