@@ -165,7 +165,7 @@ if __name__ == "__main__":
     # args.ckpt_path = r"E:\Cluster_Backup\SimCLR-runs\Oct01_06-01-34_compute1-exec-209.ris.wustl.edu\checkpoint_0100" \
     #                  r".pth.tar"
 
-    if args.dataset == "STL10":
+    if args.dataset == "stl10":
         train_dataset = torchvision.datasets.STL10(
             args.dataset_dir,
             split="train",
@@ -178,7 +178,7 @@ if __name__ == "__main__":
             download=True,
             transform=get_test_transform(size=args.image_size),
         )
-    elif args.dataset == "CIFAR10":
+    elif args.dataset == "cifar0":
         train_dataset = torchvision.datasets.CIFAR10(
             args.dataset_dir,
             train=True,
