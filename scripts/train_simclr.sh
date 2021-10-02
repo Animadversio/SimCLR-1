@@ -2,7 +2,7 @@
 #BSUB -n 4
 #BSUB -q general
 #BSUB -G compute-crponce
-#BSUB -J 'simclr_train[1-2]'
+#BSUB -J 'simclr_fast_train[1-2]'
 #BSUB -gpu "num=1:gmodel=TeslaV100_SXM2_32GB"
 #BSUB -R 'gpuhost'
 #BSUB -R 'select[mem>32G]'
