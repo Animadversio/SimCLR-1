@@ -10,6 +10,7 @@ from tqdm import tqdm
 from utils import save_config_file, accuracy, save_checkpoint
 
 from utils import accuracy, save_checkpoint, save_config_file
+from linear_eval import evaluation
 
 torch.manual_seed(0)
 
@@ -60,6 +61,8 @@ class SimCLR(object):
 
     def train(self, train_loader):
 
+        final_train_loss, final_train_acc, final_test_loss, final_test_acc = evaluation(self.model, self.args)
+        
         scaler = GradScaler(enabled=self.args.fp16_precision)
 
         # save config file
@@ -110,6 +113,8 @@ class SimCLR(object):
                             'state_dict': self.model.backbone.state_dict(), # containing the repr and the projections 
                             'optimizer': self.optimizer.state_dict(),
                         }, is_best=False, filename=os.path.join(self.writer.log_dir, checkpoint_name))
+                
+                final_train_loss, final_train_acc, final_test_loss, final_test_acc = evaluation(self.model, self.args)
 
         logging.info("Training has finished.")
         # save model checkpoints
