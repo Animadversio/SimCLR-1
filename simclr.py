@@ -22,7 +22,7 @@ class SimCLR(object):
         self.optimizer = kwargs['optimizer']
         self.scheduler = kwargs['scheduler']
         current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-        self.writer = SummaryWriter(log_dir=os.path.join(self.args.log_root, self.args.run_label + current_time), )
+        self.writer = SummaryWriter(log_dir=os.path.join(self.args.log_root, self.args.run_label + "_" + current_time), )
         # self.writer.log_dir = self.args.log_root + self.writer.log_dir
         logging.basicConfig(filename=os.path.join(self.writer.log_dir, 'training.log'), level=logging.DEBUG)
         self.criterion = torch.nn.CrossEntropyLoss().to(self.args.device)
