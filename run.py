@@ -45,11 +45,14 @@ parser.add_argument('--out_dim', default=128, type=int,
                     help='feature dimension (default: 128)')
 parser.add_argument('--log-every-n-steps', default=100, type=int,
                     help='Log every n steps')
+parser.add_argument('--ckpt_every_n_epocs', default=100, type=int,
+                    help='Log every n epocs')
 parser.add_argument('--temperature', default=0.07, type=float,
                     help='softmax temperature (default: 0.07)')
 parser.add_argument('--n-views', default=2, type=int, metavar='N',
                     help='Number of views for contrastive learning training.')
 parser.add_argument('--gpu-index', default=0, type=int, help='Gpu index.')
+
 parser.add_argument('--log_root', default="/scratch1/fs1/crponce/simclr_", \
     type=str, help='root folder to put logs')
 parser.add_argument('--comment', default="", \

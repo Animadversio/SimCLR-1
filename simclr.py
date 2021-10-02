@@ -101,7 +101,7 @@ class SimCLR(object):
                 self.scheduler.step()
             logging.debug(f"Epoch: {epoch_counter}\tLoss: {loss}\tTop1 accuracy: {top1[0]}")
             
-            if epoch_counter % self.args.ckpt_every_n_steps:
+            if epoch_counter % self.args.ckpt_every_n_epocs:
                 checkpoint_name = 'checkpoint_{:04d}.pth.tar'.format(epoch_counter)
                 save_checkpoint({
                             'args': self.args,
