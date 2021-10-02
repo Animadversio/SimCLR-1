@@ -239,7 +239,7 @@ if __name__ == "__main__":
     for k, v in config.items():
         parser.add_argument(f"--{k}", default=v, type=type(v))
     parser.add_argument("--ckpt_path", required=True, type=str)
-    parser.add_argument("--dataset-name", "stl10", type=str)
+    parser.add_argument("-dataset-name", default="stl10", type=str)
     args = parser.parse_args()
     args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # args.ckpt_path = r"E:\Cluster_Backup\SimCLR-runs\Oct01_06-01-34_compute1-exec-209.ris.wustl.edu\checkpoint_0100" \
