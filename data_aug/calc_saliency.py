@@ -1,5 +1,7 @@
 import os
 import time
+import numpy as np
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,7 +9,7 @@ import torch.optim as optim
 import torchvision
 from torchvision import datasets, transforms
 from torchvision.models import resnet50
-import numpy as np
+from tqdm import tqdm
 
 
 def showimg(image,figsize=[8,8],cmap=None):
@@ -58,7 +60,7 @@ def resnet_forward(model, x: Tensor) -> Tensor:
   x = model.fc(x)
   return x
 
-
+## To get resnet functions 
 def resnet_feature(model, x: Tensor, layer=(2, 3, 4)) -> Tensor:
   feature_dict = {}
   # See note [TorchScript super()]
@@ -121,8 +123,7 @@ def resnet_saliency(model, x: Tensor, layersW=(None, 1, 2, 1), return_maps=False
     del map_dict
     return salmap
 
-
-# functions to map saliency map to a alpha map on the image
+#%% nonlinear functions to map saliency map to a alpha map on the image
 def threshfunc(salmap):
   return salmap>torch.mean(salmap, dim=[1,2,3])
 
@@ -155,3 +156,22 @@ def tsr2image(img):
   img = inv_norm(img)
   img = img.permute(1, 2, 0)
   return img.numpy()
+
+# preprocess data set 
+def saliency_process_dataset(model, dataset, saveprefix="sal_", 
+        layersW=(None, 1, 2, 1), alphamapfunc=linearqtlfunc, procall=False):
+  for subfdr in os.listdir(imgroot/"train"):
+    os.makedirs(imgroot/(saveprefix+"train")/subfdr, exist_ok=True)
+  
+  for i, (img_pp, label) in tqdm(enumerate(dataset)):
+    imgpath = dataset.img_labels.path[i]
+    imgname, ext = os.path.splitext(imgpath)
+    with torch.no_grad():
+      salmap = resnet_saliency(model, img_pp.unsqueeze(0).cuda(), layersW=layersW, return_maps=False).cpu()
+    np.save(imgroot/(saveprefix+imgname+".npy"), salmap.numpy())
+    # image = img_pp * alphamapfunc(salmap)[0]
+    # imsave(imgroot/(saveprefix+imgname+".png"), (255.0*tsr2image(image)).astype('uint8'))
+    if not procall: 
+      if i==5: break 
+
+  # saliency_process_dataset(model_sup, train_dataset_nosal, saveprefix="sal_", procall=True) # supervised model L2 saliency>
