@@ -61,8 +61,8 @@ class SimCLR(object):
 
     def train(self, train_loader):
 
-        final_train_loss, final_train_acc, final_test_loss, final_test_acc = evaluation(self.model, self.args)
-        
+        final_train_loss, final_train_acc, final_test_loss, final_test_acc = evaluation(self.model.backbone, self.args)
+
         scaler = GradScaler(enabled=self.args.fp16_precision)
 
         # save config file
