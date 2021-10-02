@@ -146,12 +146,25 @@ def test(args, loader, simclr_model, model, criterion, optimizer):
 
     return loss_epoch, accuracy_epoch
 
+
 def get_resnet(arch, device, pretrained=False):
     if arch == 'resnet18':
         model = torchvision.models.resnet18(pretrained=pretrained, num_classes=10).to(device)
     elif arch == 'resnet50':
         model = torchvision.models.resnet50(pretrained=pretrained, num_classes=10).to(device)
     return model
+
+
+def evaluation(resnet_model, args):
+    train_dataset, test_dataset = get_train_test_dataset(dataset)
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=args.logistic_batch_size,
+        shuffle=True, drop_last=True, num_workers=args.workers)
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset, batch_size=args.logistic_batch_size,
+        shuffle=False, drop_last=True, num_workers=args.workers,)
+
+    return 
 
 
 if __name__ == "__main__":
@@ -178,7 +191,7 @@ if __name__ == "__main__":
             download=True,
             transform=get_test_transform(size=args.image_size),
         )
-    elif args.dataset == "cifar0":
+    elif args.dataset == "cifar10":
         train_dataset = torchvision.datasets.CIFAR10(
             args.dataset_dir,
             train=True,
@@ -247,9 +260,10 @@ if __name__ == "__main__":
         loss_epoch, accuracy_epoch = train(
             args, arr_train_loader, encoder, model, criterion, optimizer
         )
-        print(
+        if (1 + epoch) % 50 == 0:
+            print(
             f"Epoch [{epoch}/{args.logistic_epochs}]\t Loss: {loss_epoch / len(arr_train_loader)}\t Accuracy: {accuracy_epoch / len(arr_train_loader)}"
-        )
+            )
 
     # final testing
     loss_epoch, accuracy_epoch = test(
