@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
 from torchvision import datasets, transforms
-from torchvision.models import resnet50
+from torchvision.models import resnet50, resnet18
 from tqdm import tqdm
 
 
@@ -175,3 +175,17 @@ def saliency_process_dataset(model, dataset, saveprefix="sal_",
       if i==5: break 
 
   # saliency_process_dataset(model_sup, train_dataset_nosal, saveprefix="sal_", procall=True) # supervised model L2 saliency>
+
+def process_stl10(dataset_dir="/scratch1/fs1/crponce/Datasets", layersW=(None,1,2,1)):
+  model = resnet18(pretrained=True).cuda()
+  dataset = datasets.STL10(dataset_dir, split='unlabeled', download=True
+                            transform=transforms.Compose([transforms.ToTensor(),
+                              transforms.Normalize(mean=(0.4914, 0.4822, 0.4465), std=(0.2023, 0.1994, 0.2010))]), 
+                          )
+  salmap_col = []
+  for i, (img_pp, _) in tqdm(enumerate(dataset)): 
+    with torch.no_grad():
+      salmap = resnet_saliency(model, img_pp.unsqueeze(0).cuda(), layersW=layersW, return_maps=False).cpu()
+    salmap_col.append(salmap.numpy())
+
+  np.save(join(dataset_dir, "stl10_unlabeled_saliency.npy"), salmap.numpy())
