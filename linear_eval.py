@@ -157,7 +157,7 @@ def get_resnet(arch, device, pretrained=False):
 
 def evaluation(encoder, args, logistic_batch_size=256):
     proj_head = encoder.fc
-    n_features = encoder.fc.in_features
+    n_features = encoder.fc[0].in_features
     encoder.fc = Identity()
 
     if args.dataset == "stl10":
