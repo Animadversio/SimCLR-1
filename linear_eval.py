@@ -202,7 +202,7 @@ def evaluation(encoder, args, logistic_batch_size=256):
     ## Logistic Regression
     n_classes = 10  # CIFAR-10 / STL-10
     linearhead = LogisticRegression(n_features, n_classes)
-    linearhead = model.to(args.device)
+    linearhead = linearhead.to(args.device)
 
     optimizer = torch.optim.Adam(linearhead.parameters(), lr=3e-4)
     criterion = torch.nn.CrossEntropyLoss()
