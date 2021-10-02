@@ -160,7 +160,7 @@ def evaluation(encoder, args, logistic_batch_size=256):
     n_features = encoder.fc[0].in_features
     encoder.fc = nn.Identity()
 
-    if args.dataset == "stl10":
+    if args.dataset_name == "stl10":
         train_dataset = torchvision.datasets.STL10(
             args.dataset_dir, split="train", download=True,
             transform=get_test_transform(size=args.image_size),
@@ -169,7 +169,7 @@ def evaluation(encoder, args, logistic_batch_size=256):
             args.dataset_dir, split="test", download=True,
             transform=get_test_transform(size=args.image_size),
         )
-    elif args.dataset == "cifar10":
+    elif args.dataset_name == "cifar10":
         train_dataset = torchvision.datasets.CIFAR10(
             args.dataset_dir, train=True, download=True,
             transform=get_test_transform(size=args.image_size),
@@ -236,12 +236,13 @@ if __name__ == "__main__":
     for k, v in config.items():
         parser.add_argument(f"--{k}", default=v, type=type(v))
     parser.add_argument("--ckpt_path", required=True, type=str)
+    parser.add_argument("--dataset-name", "stl10", type=str)
     args = parser.parse_args()
     args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # args.ckpt_path = r"E:\Cluster_Backup\SimCLR-runs\Oct01_06-01-34_compute1-exec-209.ris.wustl.edu\checkpoint_0100" \
     #                  r".pth.tar"
 
-    if args.dataset == "stl10":
+    if args.dataset_name == "stl10":
         train_dataset = torchvision.datasets.STL10(
             args.dataset_dir, split="train", download=True,
             transform=get_test_transform(size=args.image_size),
@@ -250,7 +251,7 @@ if __name__ == "__main__":
             args.dataset_dir, split="test", download=True,
             transform=get_test_transform(size=args.image_size),
         )
-    elif args.dataset == "cifar10":
+    elif args.dataset_name == "cifar10":
         train_dataset = torchvision.datasets.CIFAR10(
             args.dataset_dir, train=True, download=True,
             transform=get_test_transform(size=args.image_size),
@@ -263,19 +264,13 @@ if __name__ == "__main__":
         raise NotImplementedError
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size=args.logistic_batch_size,
-        shuffle=True,
-        drop_last=True,
-        num_workers=args.workers,
+        train_dataset, batch_size=args.logistic_batch_size,
+        shuffle=True, drop_last=True, num_workers=args.workers,
     )
 
     test_loader = torch.utils.data.DataLoader(
-        test_dataset,
-        batch_size=args.logistic_batch_size,
-        shuffle=False,
-        drop_last=True,
-        num_workers=args.workers,
+        test_dataset, batch_size=args.logistic_batch_size,
+        shuffle=False, drop_last=True, num_workers=args.workers,
     )
 
     encoder = get_resnet(args.resnet, args.device, pretrained=False)
