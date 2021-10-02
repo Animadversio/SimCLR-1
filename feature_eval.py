@@ -37,6 +37,8 @@ def prep_feature_readout(model_path, arch, device="cuda", num_classes=10):
             model = torchvision.models.resnet18(pretrained=False, num_classes=10).to(device)
         elif arch == 'resnet50':
             model = torchvision.models.resnet50(pretrained=False, num_classes=10).to(device)
+        else:
+            raise ValueError
 
         state_dict = torch.load(model_path, map_location=device)['state_dict']
 
@@ -46,12 +48,18 @@ def prep_feature_readout(model_path, arch, device="cuda", num_classes=10):
                     # remove prefix
                     state_dict[k[len("backbone."):]] = state_dict[k]
             del state_dict[k]
+
+        log = model.load_state_dict(state_dict, strict=False)
+        assert log.missing_keys == ['fc.weight', 'fc.bias']
+
     elif isinstance(model_path, nn.Module):
         # if input is a
         model = model_path
         feat_dimen = model.fc.in_features
         model.fc = nn.Linear(feat_dimen, num_classes, bias=True, ).to(device)
-
+    else:
+        raise ValueError
+    
     for name, param in model.named_parameters():
         if name not in ['fc.weight', 'fc.bias']:
             param.requires_grad = False
@@ -120,7 +128,7 @@ def train_linear(model, optimizer, train_loader, test_loader, epochs=100, device
     return model, optimizer
 
 
-def feature_evaluation(model_path, arch="resnet18", device="cuda", \
+def feature_evaluation(model_path, arch="resnet18", device="cuda",
                        dataset="STL10", data_dir="./data"):
 
     model = prep_feature_readout(model_path, arch, device=device)
