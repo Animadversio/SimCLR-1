@@ -155,9 +155,9 @@ def get_resnet(arch, device, pretrained=False):
     return model
 
 
-def evaluation(encoder, args, logistic_batch_size=256, logistic_epochs=500):
+def evaluation(encoder, args, logistic_batch_size=256, logistic_epochs=500, print_every_epoch=50):
     args.image_size = 224
-    if "data" in args: args.dataset_dir = args.data
+    if "data" in args:  args.dataset_dir = args.data
 
     proj_head = encoder.fc
     n_features = encoder.fc[0].in_features
@@ -211,7 +211,7 @@ def evaluation(encoder, args, logistic_batch_size=256, logistic_epochs=500):
         loss_epoch, accuracy_epoch = eval_train(
             args, arr_train_loader, encoder, linearhead, criterion, optimizer
         )
-        if (1 + epoch) % 50 == 0:
+        if (1 + epoch) % print_every_epoch == 0:
             print(
     f"Epoch [{epoch}/{logistic_epochs}]\t Loss: {loss_epoch / len(arr_train_loader)}\t Accuracy: {accuracy_epoch / len(arr_train_loader)}"
             )
