@@ -155,7 +155,7 @@ def get_resnet(arch, device, pretrained=False):
     return model
 
 
-def evaluation(encoder, args):
+def evaluation(encoder, args, logistic_batch_size=256):
     proj_head = encoder.fc
     n_features = encoder.fc.in_features
     encoder.fc = Identity()
@@ -182,11 +182,11 @@ def evaluation(encoder, args):
         raise NotImplementedError
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=args.logistic_batch_size,
+        train_dataset, batch_size=logistic_batch_size,
         shuffle=True, drop_last=True, num_workers=args.workers)
     
     test_loader = torch.utils.data.DataLoader(
-        test_dataset, batch_size=args.logistic_batch_size,
+        test_dataset, batch_size=logistic_batch_size,
         shuffle=False, drop_last=True, num_workers=args.workers,)
 
     print("### Creating features from pre-trained context model ###")
@@ -194,7 +194,7 @@ def evaluation(encoder, args):
         encoder, train_loader, test_loader, args.device
     )
     arr_train_loader, arr_test_loader = create_data_loaders_from_arrays(
-        train_X, train_y, test_X, test_y, args.logistic_batch_size
+        train_X, train_y, test_X, test_y, logistic_batch_size
     )
     ## Logistic Regression
     n_classes = 10  # CIFAR-10 / STL-10
