@@ -1,7 +1,7 @@
 import logging
 import os
 import sys
-
+from datetime import datetime
 import torch
 import torch.nn.functional as F
 from torch.cuda.amp import GradScaler, autocast
@@ -21,8 +21,9 @@ class SimCLR(object):
         self.model = kwargs['model'].to(self.args.device)
         self.optimizer = kwargs['optimizer']
         self.scheduler = kwargs['scheduler']
-        self.writer = SummaryWriter(comment=self.args.comment)
-        self.writer.log_dir = self.args.log_root + self.writer.log_dir
+        current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+        self.writer = SummaryWriter(log_dir=os.path.join(self.args.log_root, self.args.run_label + current_time), )
+        # self.writer.log_dir = self.args.log_root + self.writer.log_dir
         logging.basicConfig(filename=os.path.join(self.writer.log_dir, 'training.log'), level=logging.DEBUG)
         self.criterion = torch.nn.CrossEntropyLoss().to(self.args.device)
 

@@ -53,10 +53,10 @@ parser.add_argument('--n-views', default=2, type=int, metavar='N',
                     help='Number of views for contrastive learning training.')
 parser.add_argument('--gpu-index', default=0, type=int, help='Gpu index.')
 
-parser.add_argument('--log_root', default="/scratch1/fs1/crponce/simclr_", \
+parser.add_argument('--log_root', default="/scratch1/fs1/crponce/simclr_runs", \
     type=str, help='root folder to put logs')
-parser.add_argument('--comment', default="", \
-    type=str, help='folder suffix to identify runs')
+parser.add_argument('--run_label', default="", \
+    type=str, help='folder prefix to identify runs')
 
 
 def main():
