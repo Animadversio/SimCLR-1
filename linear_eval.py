@@ -57,10 +57,8 @@ def inference(loader, simclr_model, device):
 
         # get encoding
         with torch.no_grad():
-            h = simclr_model(x )  # h is the repr, z is the MLP projection.
-
-        h = h.detach()
-
+            h = simclr_model(x).detach()  # h is the repr, z is the MLP projection.
+        
         feature_vector.extend(h.cpu().detach().numpy())
         labels_vector.extend(y.numpy())
 
@@ -160,7 +158,7 @@ def evaluation(encoder, args, logistic_batch_size=256, logistic_epochs=500, prin
     if "data" in args:  args.dataset_dir = args.data
 
     proj_head = encoder.fc
-    n_features = encoder.fc[0].in_features
+    n_features = encoder.fc[0].in_features # input dimensions to the MLP 
     encoder.fc = nn.Identity()
 
     if args.dataset_name == "stl10":
