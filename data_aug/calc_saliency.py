@@ -1,0 +1,143 @@
+def showimg(image,figsize=[8,8],cmap=None):
+  if type(image) in [tuple,list]:
+    for i in range(len(image)):
+      figh,ax = showimg(image[i], figsize=figsize,cmap=cmap)
+  elif len(image.shape)==4:
+    for i in range(image.shape[0]):
+      figh,ax = showimg(image[i], figsize=figsize,cmap=cmap)
+  else:
+    if len(image.shape)==3 and image.shape[2]==1:
+      image = image[:,:,0]
+    figh,ax = plt.subplots(figsize=figsize)
+    plt.imshow(image,cmap=cmap)
+    plt.axis("off")
+    plt.show()
+  return figh,ax
+
+def image_standardize(image):
+  if len(image.shape)==2:
+    image = np.repeat(image[:,:,np.newaxis],3,axis=2)
+  elif image.shape[2]==1:
+    image = np.repeat(image[:,:,:],3,axis=2)
+  elif image.shape[2]==4:
+    image = image[:,:,:3]
+  elif (image.shape[2]==3) and len(image.shape)==3:
+    pass
+  else:
+    raise ValueError("Shape of image is %s error",image.shape)
+  return image
+
+def resnet_forward(model, x: Tensor) -> Tensor:
+  # See note [TorchScript super()]
+  x = model.conv1(x)
+  x = model.bn1(x)
+  x = model.relu(x)
+  x = model.maxpool(x)
+
+  x = model.layer1(x)
+  x = model.layer2(x)
+  x = model.layer3(x)
+  x = model.layer4(x)
+
+  x = model.avgpool(x)
+  x = torch.flatten(x, 1)
+  x = model.fc(x)
+  return x
+
+
+def resnet_feature(model, x: Tensor, layer=(2, 3, 4)) -> Tensor:
+  feature_dict = {}
+  # See note [TorchScript super()]
+  x = model.conv1(x)
+  x = model.bn1(x)
+  x = model.relu(x)
+  x = model.maxpool(x)
+
+  x = model.layer1(x)
+  if 1 in layers: feature_dict["layer1"] = x.detach().cpu().clone()
+  x = model.layer2(x)
+  if 2 in layers: feature_dict["layer2"] = x.detach().cpu().clone()
+  x = model.layer3(x)
+  if 3 in layers: feature_dict["layer3"] = x.detach().cpu().clone()
+  x = model.layer4(x)
+  if 4 in layers: feature_dict["layer4"] = x.detach().cpu().clone()
+  return feature_dict
+
+
+def saliency_map(feature_dict, weight=(1,2,1)):
+  layer2map = torch.linalg.norm(feature_dict["layer2"], dim=1, ord=2, keepdims=True)
+  layer3map = torch.linalg.norm(feature_dict["layer3"], dim=1, ord=2, keepdims=True)
+  layer4map = torch.linalg.norm(feature_dict["layer4"], dim=1, ord=2, keepdims=True)
+  W2, W3, W4 = weight
+  salmap = F.interpolate(layer2map, size=(224, 224), mode="bilinear", align_corners=True)*W2+\
+    F.interpolate(layer2map, size=(224, 224), mode="bilinear", align_corners=True)*W3+\
+    F.interpolate(layer2map, size=(224, 224), mode="bilinear", align_corners=True)*W4
+  return salmap
+
+
+def resnet_saliency(model, x: Tensor, layersW=(None, 1, 2, 1), return_maps=False):
+  """Combine the 2 functions above"""
+  map_dict = {}
+  B, H, W = x.shape[0],x.shape[2],x.shape[3]
+  salmap = torch.zeros([B, 1, H, W]).to("cuda")
+  x = model.conv1(x)
+  x = model.bn1(x)
+  x = model.relu(x)
+  x = model.maxpool(x)
+
+  x = model.layer1(x)
+  if layersW[1 - 1]: 
+    map_dict["layer1"] = torch.linalg.norm(x.detach(), dim=1, ord=2, keepdims=True)
+    salmap += F.interpolate(map_dict["layer1"], size=(H, W), mode="bilinear", align_corners=True) * layersW[1 - 1]
+  x = model.layer2(x)
+  if layersW[2 - 1]: 
+    map_dict["layer2"] = torch.linalg.norm(x.detach(), dim=1, ord=2, keepdims=True)
+    salmap += F.interpolate(map_dict["layer2"], size=(H, W), mode="bilinear", align_corners=True) * layersW[2 - 1]
+  x = model.layer3(x)
+  if layersW[3 - 1]: 
+    map_dict["layer3"] = torch.linalg.norm(x.detach(), dim=1, ord=2, keepdims=True)
+    salmap += F.interpolate(map_dict["layer3"], size=(H, W), mode="bilinear", align_corners=True) * layersW[3 - 1]
+  x = model.layer4(x)
+  if layersW[4 - 1]: 
+    map_dict["layer4"] = torch.linalg.norm(x.detach(), dim=1, ord=2, keepdims=True)
+    salmap += F.interpolate(map_dict["layer4"], size=(H, W), mode="bilinear", align_corners=True) * layersW[4 - 1]
+  if return_maps:
+    return salmap, map_dict
+  else:
+    del map_dict
+    return salmap
+
+
+# functions to map saliency map to a alpha map on the image
+def threshfunc(salmap):
+  return salmap>torch.mean(salmap, dim=[1,2,3])
+
+def softthreshfunc(salmap):
+  floor,_ = salmap.view([salmap.shape[0],-1]).min(dim=1, keepdim=True)
+  floor = floor.unsqueeze(1).unsqueeze(2)
+  ceil = torch.mean(salmap, dim=[1,2,3], keepdim=True)
+  return torch.clamp((salmap-ceil)/(ceil-floor),-1,0) + 1
+
+def linearfunc(salmap):
+  floor,_ = salmap.view([salmap.shape[0],-1]).min(dim=1, keepdim=True)
+  floor = floor.unsqueeze(1).unsqueeze(2)
+  ceil,_ = salmap.view([salmap.shape[0],-1]).max(dim=1, keepdim=True)
+  ceil = ceil.unsqueeze(1).unsqueeze(2)
+  # ceil = torch.mean(salmap, dim=[1,2,3], keepdim=True)
+  return torch.clamp((salmap-floor)/(ceil-floor),0,1)
+
+def linearqtlfunc(salmap, qtl=(0.20,0.90)):
+  floor = torch.quantile(salmap.view([salmap.shape[0],-1]), qtl[0], dim=1, keepdim=True)
+  floor = floor.unsqueeze(1).unsqueeze(2)
+  ceil = torch.quantile(salmap.view([salmap.shape[0],-1]), qtl[1], dim=1, keepdim=True)
+  ceil = ceil.unsqueeze(1).unsqueeze(2)
+  # ceil = torch.mean(salmap, dim=[1,2,3], keepdim=True)
+  return torch.clamp((salmap-floor)/(ceil-floor),0,1)
+
+def tsr2image(img):
+  inv_norm = transforms.Normalize(
+      mean=(-0.4914/0.2023, -0.4822/0.1994, -0.4465/0.2010),
+      std=(1/0.2023, 1/0.1994, 1/0.2010))
+  img = inv_norm(img)
+  img = img.permute(1, 2, 0)
+  return img.numpy()

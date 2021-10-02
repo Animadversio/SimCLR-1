@@ -22,6 +22,7 @@ class ContrastiveLearningDataset:
         return data_transforms
 
     def get_dataset(self, name, n_views):
+        # note this trick, save a function handle and only evaluate it when needed! Lazy execution. 
         valid_datasets = {'cifar10': lambda: datasets.CIFAR10(self.root_folder, train=True,
                                                               transform=ContrastiveLearningViewGenerator(
                                                                   self.get_simclr_pipeline_transform(32),
@@ -39,4 +40,4 @@ class ContrastiveLearningDataset:
         except KeyError:
             raise InvalidDatasetSelection()
         else:
-            return dataset_fn()
+            return dataset_fn() # evaluate the function here, not at the dict. 
