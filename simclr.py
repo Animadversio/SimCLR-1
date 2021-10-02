@@ -61,12 +61,19 @@ class SimCLR(object):
 
     def train(self, train_loader):
 
-        final_train_loss, final_train_acc, final_test_loss, final_test_acc = evaluation(self.model.backbone, self.args)
-
         scaler = GradScaler(enabled=self.args.fp16_precision)
 
         # save config file
         save_config_file(self.writer.log_dir, self.args)
+
+        final_train_loss, final_train_acc, final_test_loss, final_test_acc = evaluation(self.model.backbone, self.args, \
+                        logistic_batch_size=256, logistic_epochs=500, print_every_epoch=100)
+        logging.debug(f"Random Initialization \t After Logistic Fitting, Train Loss: {final_train_loss}\tTop1 accuracy: {final_train_acc}")
+        logging.debug(f"Random Initialization \t After Logistic Fitting, Test  Loss: {final_test_loss}\tTop1 accuracy: {final_test_acc}")
+        self.writer.add_scalar('eval/train_loss', final_train_loss, global_step=-1)
+        self.writer.add_scalar('eval/train_acc', final_train_acc, global_step=-1)
+        self.writer.add_scalar('eval/test_loss', final_test_loss, global_step=-1)
+        self.writer.add_scalar('eval/test_acc', final_test_acc, global_step=-1)
 
         n_iter = 0
         logging.info(f"Start SimCLR training for {self.args.epochs} epochs.")
@@ -93,6 +100,7 @@ class SimCLR(object):
 
                 if n_iter % self.args.log_every_n_steps == 0:
                     top1, top5 = accuracy(logits, labels, topk=(1, 5))
+                    self.writer.add_scalar('epoch', epoch_counter, global_step=n_iter)
                     self.writer.add_scalar('loss', loss, global_step=n_iter)
                     self.writer.add_scalar('acc/top1', top1[0], global_step=n_iter)
                     self.writer.add_scalar('acc/top5', top5[0], global_step=n_iter)
@@ -114,7 +122,16 @@ class SimCLR(object):
                             'optimizer': self.optimizer.state_dict(),
                         }, is_best=False, filename=os.path.join(self.writer.log_dir, checkpoint_name))
                 
-                final_train_loss, final_train_acc, final_test_loss, final_test_acc = evaluation(self.model, self.args)
+                final_train_loss, final_train_acc, final_test_loss, final_test_acc = evaluation(self.model.backbone, self.args, \
+                        logistic_batch_size=256, logistic_epochs=500, print_every_epoch=100)
+                
+                logging.debug(f"Epoch: {epoch_counter}\t After Logistic Fitting, Train Loss: {final_train_loss}\tTop1 accuracy: {final_train_acc}")
+                logging.debug(f"Epoch: {epoch_counter}\t After Logistic Fitting, Test  Loss: {final_test_loss}\tTop1 accuracy: {final_test_acc}")
+                self.writer.add_scalar('eval/train_loss', final_train_loss, global_step=n_iter)
+                self.writer.add_scalar('eval/train_acc', final_train_acc, global_step=n_iter)
+                self.writer.add_scalar('eval/test_loss', final_test_loss, global_step=n_iter)
+                self.writer.add_scalar('eval/test_acc', final_test_acc, global_step=n_iter)
+
 
         logging.info("Training has finished.")
         # save model checkpoints
