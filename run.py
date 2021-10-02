@@ -50,6 +50,10 @@ parser.add_argument('--temperature', default=0.07, type=float,
 parser.add_argument('--n-views', default=2, type=int, metavar='N',
                     help='Number of views for contrastive learning training.')
 parser.add_argument('--gpu-index', default=0, type=int, help='Gpu index.')
+parser.add_argument('--log_root', default="/scratch1/fs1/crponce/simclr_", \
+    type=str, help='root folder to put logs')
+parser.add_argument('--comment', default="", \
+    type=str, help='folder suffix to identify runs')
 
 
 def main():
@@ -81,7 +85,7 @@ def main():
 
     #  It’s a no-op if the 'gpu_index' argument is a negative integer or None.
     with torch.cuda.device(args.gpu_index):
-        simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, args=args)
+        simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, args=args) # args carry the global config variables here.
         simclr.train(train_loader)
 
 

@@ -219,7 +219,7 @@ if __name__ == "__main__":
             if k.startswith('backbone') and not k.startswith('backbone.fc'):
                 # remove prefix
                 state_dict[k[len("backbone."):]] = state_dict[k]
-        del state_dict[k]
+                del state_dict[k]
     log = encoder.load_state_dict(state_dict, strict=False)
     assert log.missing_keys == ['fc.weight', 'fc.bias']
 
