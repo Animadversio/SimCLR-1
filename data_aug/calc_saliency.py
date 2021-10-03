@@ -190,4 +190,5 @@ def process_stl10(dataset_dir="/scratch1/fs1/crponce/Datasets", layersW=(None,1,
       salmap = resnet_saliency(model, img_pp.unsqueeze(0).cuda(), layersW=layersW, return_maps=False).cpu()
     salmap_col.append(salmap.numpy())
 
-  np.save(join(dataset_dir, "stl10_unlabeled_saliency.npy"), salmap.numpy())
+  salmap_arr = np.array(salmap_col)
+  np.save(join(dataset_dir, "stl10_unlabeled_saliency.npy"), salmap_arr)
