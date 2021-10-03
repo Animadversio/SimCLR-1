@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
+from torch import Tensor
 from torchvision import datasets, transforms
 from torchvision.models import resnet50, resnet18
 from tqdm import tqdm
