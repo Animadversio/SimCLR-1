@@ -178,7 +178,7 @@ def saliency_process_dataset(model, dataset, saveprefix="sal_",
 
 def process_stl10(dataset_dir="/scratch1/fs1/crponce/Datasets", layersW=(None,1,2,1)):
   model = resnet18(pretrained=True).cuda()
-  dataset = datasets.STL10(dataset_dir, split='unlabeled', download=True
+  dataset = datasets.STL10(dataset_dir, split='unlabeled', download=True, 
                             transform=transforms.Compose([transforms.ToTensor(),
                               transforms.Normalize(mean=(0.4914, 0.4822, 0.4465), std=(0.2023, 0.1994, 0.2010))]), 
                           )
