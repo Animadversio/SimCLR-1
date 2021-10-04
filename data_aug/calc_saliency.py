@@ -63,7 +63,7 @@ def resnet_forward(model, x: Tensor) -> Tensor:
   return x
 
 ## To get resnet functions 
-def resnet_feature(model, x: Tensor, layer=(2, 3, 4)) -> Tensor:
+def resnet_feature(model, x: Tensor, layers=(2, 3, 4)) -> Tensor:
   feature_dict = {}
   # See note [TorchScript super()]
   x = model.conv1(x)
@@ -192,3 +192,49 @@ def process_stl10(dataset_dir="/scratch1/fs1/crponce/Datasets", layersW=(None,1,
 
   salmap_arr = np.array(salmap_col)
   np.save(join(dataset_dir, "stl10_unlabeled_saliency.npy"), salmap_arr)
+
+def process_stl10_fastsal(ckpt="weights/salicon_A.pth"):
+  import model.fastSal as fastsal
+  from utils import load_weight
+  model = fastsal.fastsal(pretrain_mode=False, model_type='A')
+  state_dict, opt_state = load_weight(ckpt, remove_decoder=False)
+  model.load_state_dict(state_dict)
+  model.cuda().eval()
+
+  import torch
+  import numpy as np
+  import pandas as pd
+  from tqdm import tqdm
+  from os.path import join
+  import matplotlib.pylab as plt
+  import torch.nn.functional as F
+  from torch.utils.data import Dataset, DataLoader
+  from torchvision import datasets, transforms, utils
+
+  dataset = datasets.STL10("/scratch1/fs1/crponce/Datasets", split="unlabeled", download=True, transform=transforms.ToTensor(),)
+  dataloader = DataLoader(dataset, batch_size=75, shuffle=False, drop_last=False)
+  salmap_col = []
+  for images, _ in tqdm(dataloader):
+    img_tsr = F.interpolate(images.to('cuda'), [512, 512]) 
+
+    with torch.no_grad():
+      salmap = model(img_tsr)
+
+    salmap_small = F.interpolate(salmap, [96, 96]).cpu().numpy()
+    salmap_col.append(salmap_small)
+
+  salmap_arr = np.concatenate(salmap_col, axis=0)
+  np.save("/scratch1/fs1/crponce/Datasets/stl10_unlabeled_salmaps_salicon.npy",salmap_arr)
+
+
+def visualize_salmaps():
+  figh, axs = plt.subplots(2, 10, figsize=(14, 3.5))
+  for i in range(10):
+    idx = np.random.randint(1E5)
+    img, _ = dataset[idx]
+    salmap = salmap_arr[idx,0,:,:]
+    axs[0, i].imshow(img.permute([1,2,0]))
+    axs[0, i].axis("off")
+    axs[1, i].imshow(salmap)
+    axs[1, i].axis("off")
+  figh.savefig("/scratch1/fs1/crponce/Datasets/example%03d.png"%np.random.randint(1E3))
