@@ -143,3 +143,12 @@ class SimCLR(object):
             'optimizer': self.optimizer.state_dict(),
         }, is_best=False, filename=os.path.join(self.writer.log_dir, checkpoint_name))
         logging.info(f"Model checkpoint and metadata has been saved at {self.writer.log_dir}.")
+        
+        final_train_loss, final_train_acc, final_test_loss, final_test_acc = evaluation(self.model.backbone, self.args, \
+                        logistic_batch_size=256, logistic_epochs=500, print_every_epoch=100)
+        logging.debug(f"Final Evaluation \t After Logistic Fitting, Train Loss: {final_train_loss}\tTop1 accuracy: {final_train_acc}")
+        logging.debug(f"Final Evaluation \t After Logistic Fitting, Test  Loss: {final_test_loss}\tTop1 accuracy: {final_test_acc}")
+        self.writer.add_scalar('eval/train_loss', final_train_loss, global_step=n_iter)
+        self.writer.add_scalar('eval/train_acc', final_train_acc, global_step=n_iter)
+        self.writer.add_scalar('eval/test_loss', final_test_loss, global_step=n_iter)
+        self.writer.add_scalar('eval/test_acc', final_test_acc, global_step=n_iter)

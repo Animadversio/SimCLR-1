@@ -94,9 +94,9 @@ class Contrastive_STL10_w_salmap(Dataset):
 
         if self.transform:
             imgs = [self.transform(cropview) for cropview in sal_crops]
-            return imgs
+            return imgs, None
         else:
-            return sal_crops
+            return sal_crops, None
 
     
 
