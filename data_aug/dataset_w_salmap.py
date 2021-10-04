@@ -43,7 +43,7 @@ class STL10_w_salmap(Dataset):
         return (img, salmap), label  # labels can be dropped.
 
 
-from saliency_random_cropper import RandomResizedCrop_with_Density, RandomCrop_with_Density
+from .data_aug.saliency_random_cropper import RandomResizedCrop_with_Density, RandomCrop_with_Density
 class Contrastive_STL10_w_salmap(Dataset):
     """ Return Crops of STL10 images with saliency maps """
 
