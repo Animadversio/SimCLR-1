@@ -303,7 +303,7 @@ class RandomResizedCrop_with_Density(torch.nn.Module):
       if density is not None:
         flat_idx = torch.multinomial(density.flatten(), 1, replacement=True).cpu()
         cnt_coord = unravel_indices(flat_idx, density[0, 0, :, :].shape)
-        ci, cj = cnt_coord[0,0], cnt_coord[0,1]
+        ci, cj = cnt_coord[0, 0].item(), cnt_coord[0, 1].item()
         i, j = ci - h // 2, cj - w // 2
         over_area = _overlap_area(i, j, h, w, height, width)
         if (area * scale[1]) > over_area > \
