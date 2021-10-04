@@ -245,7 +245,7 @@ class RandomResizedCrop_with_Density(torch.nn.Module):
 
   """
 
-  def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=InterpolationMode.BILINEAR,
+  def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=TF.InterpolationMode.BILINEAR,
       temperature=1.5, pad_if_needed=False):
     super().__init__()
     self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")

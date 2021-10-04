@@ -32,21 +32,13 @@ class STL10_w_salmap(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        img, label = self.dataset.__getitem__(idx)
-        salmap = self.salmaps[idx, :, :, :].astype('float')
+        img, label = self.dataset.__getitem__(idx) # img is PIL.Image, label is xxxx 
+        salmap = self.salmaps[idx, :, :, :].astype('float') # numpy.ndarray
         if self.transform:
-            sample = self.transform(img)
+            img = self.transform(img)
+        salmap_tsr = F.interpolate(torch.tensor(salmap).unsqueeze(0),[224,224]).float()
         return (img, salmap), label  # labels can be dropped.
-        # if torch.is_tensor(idx):
-        #     idx = idx.tolist()
-        #
-        # img_name = join(self.root_dir, self.landmarks_frame.iloc[idx, 0])
-        # image = io.imread(img_name)
-        # landmarks = self.landmarks_frame.iloc[idx, 1:]
-        # landmarks = np.array([landmarks])
-        # landmarks = landmarks.astype('float').reshape(-1, 2)
-        # sample = {'image': image, 'landmarks': landmarks}
-        # return sample
+
 
 def visualize_samples(saldataset):
     figh, axs = plt.subplots(2, 10, figsize=(14, 3.5))
