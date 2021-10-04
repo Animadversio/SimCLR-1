@@ -366,6 +366,7 @@ class RandomResizedCrop_with_Density(torch.nn.Module):
     else: # no padding cut off at the border. 
       i, j = max(0, i), max(0, j)
       h, w = min(h, height - i), min(w, width - j)
+      print(i, j, h, w, height, width)
       return TF.resized_crop(img, i, j, h, w, self.size, self.interpolation)
 
 
