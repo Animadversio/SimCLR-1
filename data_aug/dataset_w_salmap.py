@@ -39,7 +39,7 @@ class STL10_w_salmap(Dataset):
         salmap = self.salmaps[idx, :, :, :].astype('float') # numpy.ndarray
         if self.transform:
             img = self.transform(img)
-        salmap_tsr = F.interpolate(torch.tensor(salmap).unsqueeze(0),[224,224]).float()
+        # salmap_tsr = torch.tensor(salmap).unsqueeze(0).float()
         return (img, salmap), label  # labels can be dropped.
 
 
@@ -90,7 +90,7 @@ class Contrastive_STL10_w_salmap(Dataset):
         img, label = self.dataset.__getitem__(idx) # img is PIL.Image, label is xxxx 
         salmap = self.salmaps[idx, :, :, :].astype('float') # numpy.ndarray
         salmap_tsr = torch.tensor(salmap).unsqueeze(0).float() #F.interpolate(, [96, 96])
-        sal_crops = [self.density_cropper(img, salmap_tsr) for i in range(n_views)]
+        sal_crops = [self.density_cropper(img, salmap_tsr) for i in range(self.n_views)]
 
         if self.transform:
             imgs = [self.transform(cropview) for cropview in sal_crops]
