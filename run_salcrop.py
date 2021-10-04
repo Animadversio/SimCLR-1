@@ -60,7 +60,7 @@ parser.add_argument('--log_root', default="/scratch1/fs1/crponce/simclr_runs", \
 parser.add_argument('--run_label', default="", \
     type=str, help='folder prefix to identify runs')
 
-parser.add_argument('--temperature', default=1.5, \
+parser.add_argument('--crop_temperature', default=1.5, \
     type=float, help='temperature of sampling ')
 parser.add_argument('--pad_img', default=True, \
     type=bool, help='Pad image if needed')
@@ -84,7 +84,7 @@ def main():
     from data_aug.dataset_w_salmap import Contrastive_STL10_w_salmap
     from data_aug.saliency_random_cropper import RandomResizedCrop_with_Density, RandomCrop_with_Density
 
-    cropper = RandomResizedCrop_with_Density(96, temperature=args.temperature, pad_if_needed=args.pad_img)
+    cropper = RandomResizedCrop_with_Density(96, temperature=args.crop_temperature, pad_if_needed=args.pad_img)
     
     train_dataset = Contrastive_STL10_w_salmap(dataset_dir=args.data, 
             density_cropper=cropper, split="unlabeled") # imgv1, imgv2 =  saldataset[10]
