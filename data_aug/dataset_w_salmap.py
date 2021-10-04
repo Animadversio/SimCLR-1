@@ -89,7 +89,7 @@ class Contrastive_STL10_w_salmap(Dataset):
     def __getitem__(self, idx):
         img, label = self.dataset.__getitem__(idx) # img is PIL.Image, label is xxxx 
         salmap = self.salmaps[idx, :, :, :].astype('float') # numpy.ndarray
-        salmap_tsr = F.interpolate(torch.tensor(salmap).unsqueeze(0), [96, 96]).float()
+        salmap_tsr = torch.tensor(salmap).unsqueeze(0).float() #F.interpolate(, [96, 96])
         sal_crops = [self.density_cropper(img, salmap_tsr) for i in range(n_views)]
 
         if self.transform:
