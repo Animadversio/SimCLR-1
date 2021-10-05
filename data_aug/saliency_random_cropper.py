@@ -363,7 +363,7 @@ class RandomResizedCrop_with_Density(torch.nn.Module):
 
       img_pad = TF.pad(img, [p_left, p_top, p_right, p_bottom], fill=0, padding_mode="constant")
       return TF.resized_crop(img_pad, new_i, new_j, h, w, self.size, self.interpolation)
-    else: # no padding cut off at the border. 
+    else:  # no padding cut off at the border.
       i, j = max(0, i), max(0, j)
       h, w = min(h, height - i), min(w, width - j)
       # print(i, j, h, w, height, width)
