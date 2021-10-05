@@ -65,7 +65,8 @@ class Contrastive_STL10_w_salmap(Dataset):
             print("Use control saliency map, instead of real ones, data not loading. Temperature disabled.")
         else:
             self.salmaps = np.load(join(dataset_dir, "stl10_unlabeled_salmaps_salicon.npy")) # stl10_unlabeled_saliency.npy
-        assert len(self.dataset) == self.salmaps.shape[0]
+            assert len(self.dataset) == self.salmaps.shape[0]
+        
         self.root_dir = dataset_dir
         self.density_cropper = density_cropper
         if transform_post_crop is not None:
