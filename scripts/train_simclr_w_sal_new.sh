@@ -30,5 +30,4 @@ export extra_param="$(echo "$param_list" | head -n $LSB_JOBINDEX | tail -1)"
 echo "$extra_param"
 
 cd ~/SimCLR-torch/
-python run_salcrop.py -data $SCRATCH1/Datasets -dataset-name stl10 --workers 16 --ckpt_every_n_epocs 5 --epochs 100
- $extra_param
+python run_salcrop.py -data $SCRATCH1/Datasets -dataset-name stl10 --workers 16 --ckpt_every_n_epocs 5 --epochs 100 $extra_param
