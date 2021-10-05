@@ -352,7 +352,10 @@ class RandomResizedCrop_with_Density(torch.nn.Module):
       PIL Image or Tensor: Randomly cropped and resized image.
     """
     if logdensity is not None:
-      densitymap = torch.exp((logdensity - torch.logsumexp(logdensity, (1,2,3), keepdim=True)) / self.temperature) # 0,
+      # densitymap = torch.exp((logdensity - torch.logsumexp(logdensity, (1,2,3), keepdim=True)) / self.temperature)
+      # 0, # old obsolete version
+      densitymap = torch.exp((logdensity - logdensity.max()) / self.temperature)  # debugged version, normalized max
+      # to 0
     else: 
       densitymap = None
     i, j, h, w = self.get_params(img, self.scale, self.ratio, densitymap)
