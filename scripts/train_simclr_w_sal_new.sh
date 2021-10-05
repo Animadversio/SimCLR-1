@@ -18,12 +18,12 @@
 echo "$LSB_JOBINDEX"
 
 param_list=\
-'--out_dim 256 --batch-size 256 --run_label proj256_eval_sal_debug_T10.0   --crop_temperature 10.0  --pad_img False
---out_dim 256 --batch-size 256 --run_label proj256_eval_sal_debug_T3.0     --crop_temperature 3.0   --pad_img False
---out_dim 256 --batch-size 256 --run_label proj256_eval_sal_debug_T1.0     --crop_temperature 1.0   --pad_img False
---out_dim 256 --batch-size 256 --run_label proj256_eval_sal_debug_T0.3     --crop_temperature 0.3   --pad_img False
---out_dim 256 --batch-size 256 --run_label proj256_eval_sal_debug_T0.1     --crop_temperature 0.1   --pad_img False
---out_dim 256 --batch-size 256 --run_label proj256_eval_sal_debug_T0.01    --crop_temperature 0.01  --pad_img False
+'--out_dim 256 --batch-size 256 --run_label proj256_eval_sal_new_T0.01    --crop_temperature 0.01  --pad_img False
+--out_dim 256 --batch-size 256 --run_label proj256_eval_sal_new_T0.1     --crop_temperature 0.1   --pad_img False
+--out_dim 256 --batch-size 256 --run_label proj256_eval_sal_new_T1.0     --crop_temperature 1.0   --pad_img False
+--out_dim 256 --batch-size 256 --run_label proj256_eval_sal_new_T10.0   --crop_temperature 10.0  --pad_img False
+--out_dim 256 --batch-size 256 --run_label proj256_eval_sal_new_T0.3     --crop_temperature 0.3   --pad_img False
+--out_dim 256 --batch-size 256 --run_label proj256_eval_sal_new_T3.0     --crop_temperature 3.0   --pad_img False
 '
 
 export extra_param="$(echo "$param_list" | head -n $LSB_JOBINDEX | tail -1)"
