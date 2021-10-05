@@ -64,6 +64,8 @@ parser.add_argument('--crop_temperature', default=1.5, \
     type=float, help='temperature of sampling ')
 parser.add_argument('--pad_img', default=True, \
     type=bool, help='Pad image if needed')
+parser.add_argument('--sal_control', default=False, \
+    type=bool, help='Use the flat saliency map as control, no information')
 
 
 def main():
@@ -78,8 +80,9 @@ def main():
         args.device = torch.device('cpu')
         args.gpu_index = -1
 
+    print(args)
+    
     # dataset = ContrastiveLearningDataset(args.data)
-
     # train_dataset = dataset.get_dataset(args.dataset_name, args.n_views)
     from data_aug.dataset_w_salmap import Contrastive_STL10_w_salmap
     from data_aug.saliency_random_cropper import RandomResizedCrop_with_Density, RandomCrop_with_Density
@@ -87,7 +90,7 @@ def main():
     cropper = RandomResizedCrop_with_Density(96, temperature=args.crop_temperature, pad_if_needed=args.pad_img)
     
     train_dataset = Contrastive_STL10_w_salmap(dataset_dir=args.data, 
-            density_cropper=cropper, split="unlabeled") # imgv1, imgv2 =  saldataset[10]
+            density_cropper=cropper, split="unlabeled", salmap_control=args.sal_control) # imgv1, imgv2 =  saldataset[10]
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True,

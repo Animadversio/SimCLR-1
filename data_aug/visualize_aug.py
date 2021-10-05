@@ -1,14 +1,9 @@
-#%%
+""" Scripts to visualize augmentation distribution for the salmap dataset. """
 import numpy as np
 import matplotlib.pylab as plt
+from torchvision.transforms import RandomResizedCrop
 from data_aug.dataset_w_salmap import Contrastive_STL10_w_salmap
 from data_aug.saliency_random_cropper import RandomResizedCrop_with_Density, RandomCrop_with_Density
-crop_temperature = 1.5
-pad_img = True
-dataset_dir = r"E:\Datasets"
-cropper = RandomResizedCrop_with_Density(96, temperature=crop_temperature, pad_if_needed=pad_img)
-train_dataset = Contrastive_STL10_w_salmap(dataset_dir=dataset_dir,
-           density_cropper=cropper, split="unlabeled")  # imgv1, imgv2 =  saldataset[10]
 #%%
 def visualize_samples(train_dataset, idxs=None):
     imgs, _ = train_dataset[1]
@@ -27,6 +22,15 @@ def visualize_samples(train_dataset, idxs=None):
 
     figh.show()
     return figh, idx_col
+
+#%%
+crop_temperature = 1.5
+pad_img = True
+dataset_dir = r"E:\Datasets"
+cropper = RandomResizedCrop_with_Density(96, temperature=crop_temperature, pad_if_needed=pad_img)
+train_dataset = Contrastive_STL10_w_salmap(dataset_dir=dataset_dir,
+           density_cropper=cropper, split="unlabeled")  # imgv1, imgv2 =  saldataset[10]
+
 #%%
 idxs = [96659, 54019, 88327, 81148, 98469, 77493, 131, 58202, 66666, 65017]
 #%%
@@ -42,8 +46,7 @@ _, idxs = visualize_samples(train_dataset, idxs)
 #%%
 
 # figh.savefig("/scratch1/fs1/crponce/Datasets/example%03d.png"%np.random.randint(1E3))
-#%%
-from torchvision.transforms import RandomResizedCrop
+#%% The baseline 
 rndcropper = RandomResizedCrop(96,)
 bsl_cropper = lambda img, salmap: rndcropper(img)
 train_dataset.density_cropper = bsl_cropper

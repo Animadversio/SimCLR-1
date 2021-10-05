@@ -2,7 +2,7 @@
 #BSUB -n 8
 #BSUB -q general
 #BSUB -G compute-crponce
-#BSUB -J 'simclr_fast_sal_new_train[1-6]'
+#BSUB -J 'simclr_fast_sal_new_train[7-9]'
 #BSUB -gpu "num=1:gmodel=TeslaV100_SXM2_32GB:mode=exclusive_process"
 #BSUB -R 'gpuhost'
 #BSUB -R 'select[mem>64G]'
@@ -24,6 +24,9 @@ param_list=\
 --out_dim 256 --batch-size 256 --run_label proj256_eval_sal_new_T10.0   --crop_temperature 10.0  --pad_img False
 --out_dim 256 --batch-size 256 --run_label proj256_eval_sal_new_T0.3     --crop_temperature 0.3   --pad_img False
 --out_dim 256 --batch-size 256 --run_label proj256_eval_sal_new_T3.0     --crop_temperature 3.0   --pad_img False
+--out_dim 256 --batch-size 256 --run_label proj256_eval_sal_new_flat     --sal_control True       --pad_img False
+--out_dim 256 --batch-size 256 --run_label proj256_eval_sal_new_T30.0    --crop_temperature 30.0  --pad_img False
+--out_dim 256 --batch-size 256 --run_label proj256_eval_sal_new_T100.0    --crop_temperature 100.0  --pad_img False
 '
 
 export extra_param="$(echo "$param_list" | head -n $LSB_JOBINDEX | tail -1)"
@@ -31,3 +34,4 @@ echo "$extra_param"
 
 cd ~/SimCLR-torch/
 python run_salcrop.py -data $SCRATCH1/Datasets -dataset-name stl10 --workers 16 --ckpt_every_n_epocs 5 --epochs 100 $extra_param
+# don't break line without line breaker in bash! 
