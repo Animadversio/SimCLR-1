@@ -1,13 +1,22 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision
 from torchvision.transforms import functional as TF
+if torchvision.__version__ in ['0.8.2']:
+  OLD_TV_VER = True
+  import PIL
+else:
+  OLD_TV_VER = False
+  from torchvision.transforms.transforms import InterpolationMode
+
 import math 
 import numpy as np
 import numbers
 from torch import Tensor
 from collections.abc import Sequence
 from typing import Tuple, List, Optional
+import warnings
 
 def _setup_size(size, error_msg):
   if isinstance(size, numbers.Number):
@@ -246,7 +255,8 @@ class RandomResizedCrop_with_Density(torch.nn.Module):
 
   """
 
-  def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=TF.InterpolationMode.BILINEAR,
+  def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.),
+      interpolation=PIL.Image.BILINEAR if OLD_TV_VER else TF.InterpolationMode.BILINEAR,
       temperature=1.5, pad_if_needed=False):
     super().__init__()
     self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -259,7 +269,7 @@ class RandomResizedCrop_with_Density(torch.nn.Module):
       warnings.warn("Scale and ratio should be of kind (min, max)")
 
     # Backward compatibility with integer value
-    if isinstance(interpolation, int):
+    if not OLD_TV_VER and isinstance(interpolation, int):
       warnings.warn(
         "Argument interpolation should be of type InterpolationMode instead of int. "
         "Please, use InterpolationMode enum."
