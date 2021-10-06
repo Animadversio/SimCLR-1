@@ -17,6 +17,7 @@ from torch import Tensor
 from collections.abc import Sequence
 from typing import Tuple, List, Optional
 import warnings
+from torchvision.transforms import RandomResizedCrop
 
 def _setup_size(size, error_msg):
   if isinstance(size, numbers.Number):

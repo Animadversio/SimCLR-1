@@ -152,3 +152,4 @@ class SimCLR(object):
         self.writer.add_scalar('eval/train_acc', final_train_acc, global_step=n_iter)
         self.writer.add_scalar('eval/test_loss', final_test_loss, global_step=n_iter)
         self.writer.add_scalar('eval/test_acc', final_test_acc, global_step=n_iter)
+        print("Finished pipeline")

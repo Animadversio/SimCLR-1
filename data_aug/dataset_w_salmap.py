@@ -42,7 +42,7 @@ class STL10_w_salmap(Dataset):
         # salmap_tsr = torch.tensor(salmap).unsqueeze(0).float()
         return (img, salmap), label  # labels can be dropped.
 
-
+from .foveation import get_RandomFoveationTfm
 from .saliency_random_cropper import RandomResizedCrop_with_Density, RandomCrop_with_Density
 class Contrastive_STL10_w_salmap(Dataset):
     """ Return Crops of STL10 images with saliency maps """
@@ -50,7 +50,7 @@ class Contrastive_STL10_w_salmap(Dataset):
     def __init__(self, dataset_dir=r"/scratch1/fs1/crponce/Datasets", \
         density_cropper=RandomResizedCrop_with_Density((96, 96),), \
         transform_post_crop=None, split="unlabeled", n_views=2,
-        salmap_control=False):
+        salmap_control=False, disable_crop=False):
         """
         Args:
             dataset_dir (string): Directory with all the images. E:\Datasets
@@ -66,13 +66,15 @@ class Contrastive_STL10_w_salmap(Dataset):
         else:
             self.salmaps = np.load(join(dataset_dir, "stl10_unlabeled_salmaps_salicon.npy")) # stl10_unlabeled_saliency.npy
             assert len(self.dataset) == self.salmaps.shape[0]
-        
+
         self.root_dir = dataset_dir
         self.density_cropper = density_cropper
+        self.disable_crop = disable_crop
+
         if transform_post_crop is not None:
             self.transform = transform_post_crop
         else:
-            self.transform = self.get_simclr_post_crop_transform(96, s=1, blur=True) # default transform pipeline. 
+            self.transform = self.get_simclr_post_crop_transform(96, s=1, blur=True, foveation=False)  # default transform pipeline.
         self.n_views = n_views
 
     def __len__(self):
@@ -86,7 +88,10 @@ class Contrastive_STL10_w_salmap(Dataset):
             salmap = self.salmaps[idx, :, :, :].astype('float') # numpy.ndarray
             salmap_tsr = torch.tensor(salmap).unsqueeze(0).float() #F.interpolate(, [96, 96])
 
-        sal_crops = [self.density_cropper(img, salmap_tsr) for i in range(self.n_views)]
+        if self.disable_crop:
+            sal_crops = [img for i in range(self.n_views)]
+        else:
+            sal_crops = [self.density_cropper(img, salmap_tsr) for i in range(self.n_views)]
 
         if self.transform:
             imgs = [self.transform(cropview) for cropview in sal_crops]
@@ -96,14 +101,29 @@ class Contrastive_STL10_w_salmap(Dataset):
 
 
     @staticmethod
-    def get_simclr_post_crop_transform(size, s=1, blur=True):
-        """Return a set of data augmentation transformations as described in the SimCLR paper."""
+    def get_simclr_post_crop_transform(size, s=1, blur=True, foveation=False,
+                               kerW_coef=0.06, fov_area_rng=(0.01, 0.5), bdr=12):
+        """Return a set of data augmentation transformations as described in the SimCLR paper.
+        kerW_coef: =0.06,
+        fov_area_rng: =(0.01, 0.5),
+        bdr: =12
+
+        kerW_coef, fov_area_rng, bdr these parameters will be disabled if foveation=False
+        """
         color_jitter = transforms.ColorJitter(0.8 * s, 0.8 * s, 0.8 * s, 0.2 * s)
-        data_transforms = transforms.Compose([transforms.RandomHorizontalFlip(),
-                                              transforms.RandomApply([color_jitter], p=0.8),
-                                              transforms.RandomGrayscale(p=0.2),] +
-                                            ([GaussianBlur(kernel_size=int(0.1 * size)),]  if  blur  else  []) +
-                                              [transforms.ToTensor()])
+        tfm_list = [transforms.RandomHorizontalFlip(),
+                  transforms.RandomApply([color_jitter], p=0.8),
+                  transforms.RandomGrayscale(p=0.2),
+                  transforms.ToTensor()
+                  ]  # hard to do foveation without having a tensor
+
+        if foveation:
+            tfm_list.append(get_RandomFoveationTfm(kerW_coef=kerW_coef, fov_area_rng=fov_area_rng, bdr=bdr))
+
+        if blur:
+            tfm_list.append(GaussianBlur(kernel_size=int(0.1 * size), return_PIL=False))
+
+        data_transforms = transforms.Compose(tfm_list)
         # transforms.Compose([transforms.ToTensor(),
         #                     transforms.Normalize(mean=(0.4914, 0.4822, 0.4465),
         #                                          std=(0.2023, 0.1994, 0.2010))])
