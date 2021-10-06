@@ -2,7 +2,7 @@
 #BSUB -n 8
 #BSUB -q general
 #BSUB -G compute-crponce
-#BSUB -J 'simclr_fast_sal_new_train[10-18]'
+#BSUB -J 'simclr_fast_sal_new_train[14-17]'
 #BSUB -gpu "num=1:gmodel=TeslaV100_SXM2_32GB:mode=exclusive_process"
 #BSUB -R 'gpuhost'
 #BSUB -R 'select[mem>48G]'
@@ -13,6 +13,7 @@
 #BSUB -a 'docker(pytorchlightning/pytorch_lightning:base-cuda-py3.9-torch1.9)'
 
 # export LSF_DOCKER_SHM_SIZE=16g
+# export LSF_DOCKER_VOLUMES="$HOME:$HOME $SCRATCH1:$SCRATCH1"
 # export LSF_DOCKER_VOLUMES="$HOME:$HOME $SCRATCH1:$SCRATCH1 $STORAGE1:$STORAGE1"
 
 echo "$LSB_JOBINDEX"
