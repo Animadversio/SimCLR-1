@@ -9,7 +9,7 @@
 #BSUB -R 'rusage[mem=48GB]'
 #BSUB -M 48GB
 #BSUB -u binxu.wang@wustl.edu
-#BSUB -o  /scratch1/fs1/crponce/simclr_fast_fov_exps.%J.%I
+#BSUB -o  /scratch1/fs1/crponce/simclr_fast_fov_debug_exps.%J.%I
 #BSUB -a 'docker(pytorchlightning/pytorch_lightning:base-cuda-py3.9-torch1.9)'
 
 # export LSF_DOCKER_SHM_SIZE=16g
