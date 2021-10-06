@@ -22,9 +22,9 @@ param_list=\
 --sal_control True   --blur True  --foveation False   --run_label proj256_eval_fov_sal_ctrl
 --orig_cropper True  --blur True  --foveation False   --run_label proj256_eval_fov_orig_crop
 --disable_crop True  --blur True  --foveation False   --run_label proj256_eval_fov_nocrop_blur
---disable_crop True  --blur False --foveation True --fov_area_rng 0.01, 0.5  --kerW_coef  0.06  --run_label proj256_eval_fov_nocrop_fvr0_01-0_5_slp006
---disable_crop True  --blur False --foveation True --fov_area_rng 0.01, 0.1  --kerW_coef  0.06  --run_label proj256_eval_fov_nocrop_fvr0_01-0_1_slp006
---disable_crop True  --blur False --foveation True --fov_area_rng 0.10, 0.5  --kerW_coef  0.06  --run_label proj256_eval_fov_nocrop_fvr0_10-0_5_slp006
+--disable_crop True  --blur False --foveation True --fov_area_rng 0.01  0.5  --kerW_coef  0.06  --run_label proj256_eval_fov_nocrop_fvr0_01-0_5_slp006
+--disable_crop True  --blur False --foveation True --fov_area_rng 0.01  0.1  --kerW_coef  0.06  --run_label proj256_eval_fov_nocrop_fvr0_01-0_1_slp006
+--disable_crop True  --blur False --foveation True --fov_area_rng 0.10  0.5  --kerW_coef  0.06  --run_label proj256_eval_fov_nocrop_fvr0_10-0_5_slp006
 '
 
 export extra_param="$(echo "$param_list" | head -n $LSB_JOBINDEX | tail -1)"
