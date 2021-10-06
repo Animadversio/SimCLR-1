@@ -29,12 +29,12 @@ param_list=\
 --run_label proj256_eval_fov_sal_ctrl  --sal_control    
 --run_label proj256_eval_fov_orig_crop  --orig_cropper   
 --run_label proj256_eval_fov_nocrop_blur  --disable_crop   
---run_label proj256_eval_fov_fvr0_01-0_5_slp006  --disable_blur --foveation True --fov_area_rng 0.01  0.5  --kerW_coef  0.06  
---run_label proj256_eval_fov_fvr0_01-0_1_slp006  --disable_blur --foveation True --fov_area_rng 0.01  0.1  --kerW_coef  0.06  
---run_label proj256_eval_fov_fvr0_10-0_5_slp006  --disable_blur --foveation True --fov_area_rng 0.10  0.5  --kerW_coef  0.06  
---run_label proj256_eval_fov_nocrop_fvr0_01-0_5_slp006  --disable_crop   --disable_blur --foveation True --fov_area_rng 0.01  0.5  --kerW_coef  0.06  
---run_label proj256_eval_fov_nocrop_fvr0_01-0_1_slp006  --disable_crop   --disable_blur --foveation True --fov_area_rng 0.01  0.1  --kerW_coef  0.06  
---run_label proj256_eval_fov_nocrop_fvr0_10-0_5_slp006  --disable_crop   --disable_blur --foveation True --fov_area_rng 0.10  0.5  --kerW_coef  0.06  
+--run_label proj256_eval_fov_fvr0_01-0_5_slp006  --disable_blur --foveation --fov_area_rng 0.01  0.5  --kerW_coef  0.06  
+--run_label proj256_eval_fov_fvr0_01-0_1_slp006  --disable_blur --foveation --fov_area_rng 0.01  0.1  --kerW_coef  0.06  
+--run_label proj256_eval_fov_fvr0_10-0_5_slp006  --disable_blur --foveation --fov_area_rng 0.10  0.5  --kerW_coef  0.06  
+--run_label proj256_eval_fov_nocrop_fvr0_01-0_5_slp006  --disable_crop   --disable_blur --foveation --fov_area_rng 0.01  0.5  --kerW_coef  0.06  
+--run_label proj256_eval_fov_nocrop_fvr0_01-0_1_slp006  --disable_crop   --disable_blur --foveation --fov_area_rng 0.01  0.1  --kerW_coef  0.06  
+--run_label proj256_eval_fov_nocrop_fvr0_10-0_5_slp006  --disable_crop   --disable_blur --foveation --fov_area_rng 0.10  0.5  --kerW_coef  0.06  
 '
 
 export extra_param="$(echo "$param_list" | head -n $LSB_JOBINDEX | tail -1)"

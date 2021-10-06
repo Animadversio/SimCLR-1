@@ -63,18 +63,18 @@ parser.add_argument('--run_label', default="", \
 parser.add_argument('--crop_temperature', default=1.5, \
     type=float, help='temperature of sampling ')
 parser.add_argument('--pad_img', action='store_true', default=False, \
-    type=bool, help='Pad image if needed')
+    help='Pad image if needed')
 parser.add_argument('--sal_control', action='store_true', default=False, \
-    type=bool, help='Use the flat saliency map as control, no information')
+    help='Use the flat saliency map as control, no information')
 
 parser.add_argument('--orig_cropper', action='store_true', default=False, \
-    type=bool, help='Use the Original RandomResizedCrop  cropper')
+    help='Use the Original RandomResizedCrop  cropper')
 parser.add_argument('--disable_crop', action='store_true', default=False, \
-    type=bool, help='Disable crop')
+    help='Disable crop')
 parser.add_argument('--disable_blur', action='store_true', default=False, # blur == True
-    type=bool, help='Do Deperministic Gaussian blur augmentation ')
+    help='Do Deperministic Gaussian blur augmentation ')
 parser.add_argument('--foveation', action='store_true', default=False, \
-    type=bool, help='Do random foveation augmentation')
+    help='Do random foveation augmentation')
 parser.add_argument('--kerW_coef', default=0.06,
     type=float, help='Scaling coefficent for kernel of foveation blur')
 parser.add_argument('--fov_area_rng', default=(0.01, 0.5),
