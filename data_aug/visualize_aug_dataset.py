@@ -52,3 +52,18 @@ bsl_cropper = lambda img, salmap: rndcropper(img)
 train_dataset.density_cropper = bsl_cropper
 _, idxs = visualize_samples(train_dataset, idxs)
 
+#%%
+cropper = RandomResizedCrop_with_Density(96,
+                temperature=0.1, pad_if_needed=False)
+
+train_dataset = Contrastive_STL10_w_salmap(dataset_dir=r"E:\Datasets",
+            density_cropper=cropper, split="unlabeled", salmap_control=False,
+            disable_crop=True)  # imgv1, imgv2 =  saldataset[10]
+#%%
+train_dataset.disable_crop = True
+train_dataset.n_views = 7
+train_dataset.transform = train_dataset.get_simclr_post_crop_transform(96,
+                        blur=True, foveation=True,
+                        kerW_coef=0.06, fov_area_rng=[0.1, 0.5], bdr=12)
+idxs = [96659, 54019, 88327, 81148, 98469, 77493, 131, 58202, 66666, 65017]
+_, idxs = visualize_samples(train_dataset, idxs)
