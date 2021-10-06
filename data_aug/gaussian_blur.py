@@ -2,13 +2,14 @@ import numpy as np
 import torch
 from torch import nn
 from torchvision.transforms import transforms
+from torchvision.transforms.functional_pil import _is_pil_image
 
 np.random.seed(0)
 
 
 class GaussianBlur(object):
     """blur a single image on CPU"""
-    def __init__(self, kernel_size):
+    def __init__(self, kernel_size, return_PIL=True):
         radias = kernel_size // 2
         kernel_size = radias * 2 + 1
         self.blur_h = nn.Conv2d(3, 3, kernel_size=(kernel_size, 1),
@@ -23,12 +24,15 @@ class GaussianBlur(object):
             self.blur_h,
             self.blur_v
         )
-
+        self.return_PIL = return_PIL
         self.pil_to_tensor = transforms.ToTensor()
         self.tensor_to_pil = transforms.ToPILImage()
 
     def __call__(self, img):
-        img = self.pil_to_tensor(img).unsqueeze(0)
+        if _is_pil_image(img):
+            img = self.pil_to_tensor(img).unsqueeze(0)
+        else:
+            img = img.unsqueeze(0)
 
         sigma = np.random.uniform(0.1, 2.0)
         x = np.arange(-self.r, self.r + 1)
@@ -43,6 +47,7 @@ class GaussianBlur(object):
             img = self.blur(img)
             img = img.squeeze()
 
-        img = self.tensor_to_pil(img)
+        if self.return_PIL:
+            img = self.tensor_to_pil(img)
 
         return img
