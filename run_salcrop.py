@@ -2,7 +2,7 @@ import argparse
 import torch
 import torch.backends.cudnn as cudnn
 from torchvision import models
-from data_aug.contrastive_learning_dataset import ContrastiveLearningDataset
+from os.path import join
 from models.resnet_simclr import ResNetSimCLR
 from simclr import SimCLR
 
@@ -95,11 +95,13 @@ def main():
         args.gpu_index = -1
 
     print(args)
-    
+
+    # from data_aug.contrastive_learning_dataset import ContrastiveLearningDataset
     # dataset = ContrastiveLearningDataset(args.data)
     # train_dataset = dataset.get_dataset(args.dataset_name, args.n_views)
     from data_aug.dataset_w_salmap import Contrastive_STL10_w_salmap
     from data_aug.saliency_random_cropper import RandomResizedCrop_with_Density, RandomCrop_with_Density, RandomResizedCrop
+    from data_aug.visualize_aug_dataset import visualize_augmented_dataset
 
     cropper = RandomResizedCrop_with_Density(96, temperature=args.crop_temperature, pad_if_needed=args.pad_img)
     
@@ -109,7 +111,6 @@ def main():
     if args.orig_cropper:
         rndcropper = RandomResizedCrop(96, )
         train_dataset.dense_cropper = lambda img, salmap: rndcropper(img)
-
     train_dataset.transform = train_dataset.get_simclr_post_crop_transform(96,
                                                 blur=args.blur, foveation=args.foveation,
                                                 kerW_coef=args.kerW_coef, fov_area_rng=args.fov_area_rng, bdr=12)
@@ -128,6 +129,8 @@ def main():
     #  It’s a no-op if the 'gpu_index' argument is a negative integer or None.
     with torch.cuda.device(args.gpu_index):
         simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, args=args) # args carry the global config variables here.
+        mtg = visualize_augmented_dataset(train_dataset)
+        mtg.save(join(simclr.writer.log_dir, "sample_data_augs.png"))  # print sample data augmentations
         simclr.train(train_loader)
 
 
