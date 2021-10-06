@@ -67,6 +67,20 @@ parser.add_argument('--pad_img', default=True, \
 parser.add_argument('--sal_control', default=False, \
     type=bool, help='Use the flat saliency map as control, no information')
 
+parser.add_argument('--orig_cropper', default=False, \
+    type=bool, help='Use the Original RandomResizedCrop  cropper')
+
+parser.add_argument('--disable_crop', default=False, \
+    type=bool, help='Disable crop')
+parser.add_argument('--blur', default=True, \
+    type=bool, help='Do Deperministic Gaussian blur augmentation ')
+parser.add_argument('--foveation', default=False, \
+    type=bool, help='Do random foveation augmentation')
+parser.add_argument('--kerW_coef', default=0.06, \
+    type=float, help='Scaling coefficent for kernel of foveation blur')
+parser.add_argument('--fov_area_rng', default=(0.01, 0.5), \
+    type=float, nargs="+", help='Range of fovea area as a ratio of the whole image size.')
+
 
 def main():
     args = parser.parse_args()
@@ -85,13 +99,21 @@ def main():
     # dataset = ContrastiveLearningDataset(args.data)
     # train_dataset = dataset.get_dataset(args.dataset_name, args.n_views)
     from data_aug.dataset_w_salmap import Contrastive_STL10_w_salmap
-    from data_aug.saliency_random_cropper import RandomResizedCrop_with_Density, RandomCrop_with_Density
+    from data_aug.saliency_random_cropper import RandomResizedCrop_with_Density, RandomCrop_with_Density, RandomResizedCrop
 
     cropper = RandomResizedCrop_with_Density(96, temperature=args.crop_temperature, pad_if_needed=args.pad_img)
     
     train_dataset = Contrastive_STL10_w_salmap(dataset_dir=args.data, 
-            density_cropper=cropper, split="unlabeled", salmap_control=args.sal_control) # imgv1, imgv2 =  saldataset[10]
+            density_cropper=cropper, split="unlabeled", salmap_control=args.sal_control,
+            disable_crop=args.disable_crop)
+    if args.orig_cropper:
+        rndcropper = RandomResizedCrop(96, )
+        train_dataset.dense_cropper = lambda img, salmap: rndcropper(img)
 
+    train_dataset.transform = train_dataset.get_simclr_post_crop_transform(96,
+                                                blur=args.blur, foveation=args.foveation,
+                                                kerW_coef=args.kerW_coef, fov_area_rng=args.fov_area_rng, bdr=12)
+    
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True,
         num_workers=args.workers, pin_memory=True, drop_last=True)
