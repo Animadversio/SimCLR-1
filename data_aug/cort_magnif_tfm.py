@@ -12,7 +12,8 @@ from skimage.transform import rescale
 from scipy.misc import face
 from scipy.stats import norm
 from scipy.interpolate import griddata
-#%
+from .aug_utils import unravel_indices
+
 def get_RandomMagnifTfm(grid_generator="radial_quad_isotrop", bdr=16, fov=20, K=20, slope_C=0.012, **kwargs):
     if grid_generator == "radial_quad_isotrop":
         grid_func = lambda imgtsr, pnt: radial_quad_isotrop_gridfun(imgtsr, pnt,
@@ -22,18 +23,21 @@ def get_RandomMagnifTfm(grid_generator="radial_quad_isotrop", bdr=16, fov=20, K=
                                        slope_C=slope_C, **kwargs)
     elif grid_generator == "linear_separable":
         grid_func = lambda imgtsr, pnt: linear_separable_gridfun(imgtsr, pnt, **kwargs)
-                                       #fov=fov, K=K, fov_ratio=None)
     elif grid_generator == "normal":
         grid_func = lambda imgtsr, pnt: normal_gridfun(imgtsr, pnt, **kwargs)
-
     else:
         raise NotImplementedError
 
-    def randomMagnif(imgtsr):
+    def randomMagnif(imgtsr, density=None):
         _, H, W = imgtsr.shape
-        pY = np.random.randint(bdr, H - bdr)
-        pX = np.random.randint(bdr, W - bdr)
-        return img_cortical_magnif_tsr(imgtsr, (pX, pY), grid_func, demo=False)
+        if density is not None:
+            flat_idx = torch.multinomial(density.flatten(), 1, replacement=True).cpu()
+            cnt_coord = unravel_indices(flat_idx, density[0, 0, :, :].shape)
+            pY, pX = cnt_coord[0, 0].item(), cnt_coord[0, 1].item()
+        else:
+            pY = np.random.randint(bdr, H - bdr)
+            pX = np.random.randint(bdr, W - bdr)
+        return img_cortical_magnif_tsr(imgtsr, (pY, pX), grid_func, demo=False)  # debug Oct.7th
 
     return randomMagnif
 
