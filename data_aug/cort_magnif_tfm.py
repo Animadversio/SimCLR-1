@@ -1,51 +1,54 @@
-from io import BytesIO
-import win32clipboard
-def send_to_clipboard(image):
-    """https://stackoverflow.com/questions/34322132/copy-image-to-clipboard"""
-    output = BytesIO()
-    image.convert('RGB').save(output, 'BMP')
-    data = output.getvalue()[14:]
-    output.close()
-
-    win32clipboard.OpenClipboard()
-    win32clipboard.EmptyClipboard()
-    win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
-    win32clipboard.CloseClipboard()
-
 from scipy.misc import face
 import torch
+import torch.nn.functional as F
 from torchvision import datasets
-
 from torchvision.utils import make_grid
 from torchvision.transforms import ToPILImage, ToTensor
 from torch.nn.functional import interpolate
-#%%
 import numpy as np
 from PIL import Image
 import matplotlib.pylab as plt
 from skimage.transform import rescale
 from scipy.misc import face
-from scipy.interpolate import griddata
-img = rescale(face(), (0.25, 0.25, 1))
-#%%
 from scipy.stats import norm
-def img_cortical_magnif_general(img, pnt, grid_func, demo=True):
-    H, W, _ = img.shape
-    XX_intp, YY_intp = grid_func(img, pnt)
-    grid_y, grid_x = np.mgrid[0:H, 0:W]
-    img_cm = np.zeros_like(img.astype(np.float32))
-    for ci in range(3):
-        imgval = img[:, :, ci]
-        img_interp = griddata((grid_y.flatten(), grid_x.flatten()), imgval.flatten(), \
-                              (YY_intp.flatten(), XX_intp.flatten()))
-        img_cm[:, :, ci] = img_interp.reshape([H, W])
+from scipy.interpolate import griddata
+#%%
+def get_RandomMagnifTfm(grid_generator="radial_isotrop", bdr=16, fov=20, K=20, **kwargs):
+    if grid_generator == "radial_isotrop":
+        grid_func = lambda imgtsr, pnt: radial_isotrop_gridfun(imgtsr, pnt,
+                                       fov=fov, K=K, **kwargs)
+    elif grid_generator == "linear_separable":
+        grid_func = lambda imgtsr, pnt: linear_separable_gridfun(imgtsr, pnt, **kwargs)
+                                       #fov=fov, K=K, fov_ratio=None)
+    elif grid_generator == "normal":
+        grid_func = lambda imgtsr, pnt: normal_gridfun(imgtsr, pnt, **kwargs)
 
+    else:
+        raise NotImplementedError
+    def randomMagnif(imgtsr):
+        _, H, W = imgtsr.shape
+        pY = np.random.randint(bdr, H - bdr)
+        pX = np.random.randint(bdr, W - bdr)
+        return img_cortical_magnif_tsr(imgtsr, (pX, pY), grid_func, demo=False)
+
+    return randomMagnif
+
+def img_cortical_magnif_tsr(imgtsr, pnt, grid_func, demo=True):
+    _, H, W = imgtsr.shape
+    XX_intp, YY_intp = grid_func(imgtsr, pnt)
+    grid = torch.stack([(torch.tensor(XX_intp) / W * 2 - 1),  # normalize the value to -1, 1
+                        (torch.tensor(YY_intp) / H * 2 - 1)],  # normalize the value to -1, 1
+                       dim=2).unsqueeze(0).float()
+    # print(grid.shape) # 1, H, W, 2
+    img_cm = F.grid_sample(imgtsr.unsqueeze(0), grid, mode='bilinear', padding_mode='zeros')
+    img_cm.squeeze_(0)
     if demo:
         # % Visualize the Manified plot.
+        pX, pY = pnt
         figh, axs = plt.subplots(3, 1, figsize=(6, 12))
-        axs[0].imshow(img_cm)
+        axs[0].imshow(img_cm.permute([1,2,0]))
         axs[0].axis("off")
-        axs[1].imshow(img)
+        axs[1].imshow(imgtsr.permute([1,2,0]))
         axs[1].axis("off")
         axs[1].scatter([pX], [pY], c='r', s=16, alpha=0.5)
         axs[2].scatter(XX_intp[::2, ::2].flatten(), YY_intp[::2, ::2].flatten(), c="r", s=0.25, alpha=0.2)
@@ -55,8 +58,9 @@ def img_cortical_magnif_general(img, pnt, grid_func, demo=True):
         plt.show()
     return img_cm
 
-def linear_separable_gridfun(img, pnt):
-    H, W, _ = img.shape
+
+def linear_separable_gridfun(imgtsr, pnt, ):
+    _, H, W = imgtsr.shape
     Hhalf, Whalf = H // 2, W // 2
     Hsum = Hhalf * (Hhalf + 1) / 2
     Wsum = Whalf * (Whalf + 1) / 2
@@ -75,11 +79,16 @@ def linear_separable_gridfun(img, pnt):
     return XX_intp, YY_intp
 
 
-def normal_gridfun(img, pnt):
-    H, W, _ = img.shape
+def normal_gridfun(imgtsr, pnt, cutoff_std=2.25):
+    """
+
+    cutoff_std: where to cut off the normal distribution. too large will make the sampling at center
+    too dense!
+    """
+    _, H, W = imgtsr.shape
     Hhalf, Whalf = H // 2, W // 2
-    Hdensity = norm.pdf(np.linspace(0, 2.25, Hhalf))
-    Wdensity = norm.pdf(np.linspace(0, 2.25, Whalf))
+    Hdensity = norm.pdf(np.linspace(0, cutoff_std, Hhalf))
+    Wdensity = norm.pdf(np.linspace(0, cutoff_std, Whalf))
     H_delta = (1 / Hdensity)
     W_delta = (1 / Wdensity)
     Hsum = H_delta.sum()
@@ -97,13 +106,10 @@ def normal_gridfun(img, pnt):
     Y_ticks = np.hstack((Up_ticks, Down_ticks))
     XX_intp, YY_intp = np.meshgrid(X_ticks, Y_ticks, )
     return XX_intp, YY_intp
-#%%
-img_cm = img_cortical_magnif_general(img, (80, 120), linear_separable_gridfun, demo=True)
-#%%
-img_cm = img_cortical_magnif_general(img, (80, 120), normal_gridfun, demo=True)
-#%%
-def radial_isotrop_gridfun(img, pnt, fov=20, K=20, M=20):
-    H, W, _ = img.shape
+
+
+def radial_isotrop_gridfun(imgtsr, pnt, fov=20, K=20, cover_ratio=None):
+    _, H, W = imgtsr.shape
     Hhalf, Whalf = H // 2, W // 2
     pY, pX = pnt
     maxdist = np.sqrt(max(H - pY, pY)**2 + max(W - pX, pX)**2)  # in pixel
@@ -118,72 +124,35 @@ def radial_isotrop_gridfun(img, pnt, fov=20, K=20, M=20):
     # K = 30
     ecc_tfm = RadDistTfm(ecc, )
     coef = maxdist / ecc_tfm.max()
-    XX_intp = pX + coef * ecc_tfm * (grid_x / ecc)
-    YY_intp = pY + coef * ecc_tfm * (grid_y / ecc)
+    if cover_ratio is not None:
+        if type(cover_ratio) in [list, tuple]:
+            ratio = np.random.uniform(cover_ratio[0], cover_ratio[1])
+            coef = coef * np.sqrt(ratio)
+        else:
+            coef = coef * np.sqrt(cover_ratio)  # may not be optimal
+    XX_intp = pX + coef * ecc_tfm * (grid_x / ecc)  # cosine
+    YY_intp = pY + coef * ecc_tfm * (grid_y / ecc)  # sine
     return XX_intp, YY_intp
+#%%
+if __name__ == "__main__":
+    #%%
+    img = rescale(face(), (0.25, 0.25, 1))
+    imgtsr = torch.tensor(img).permute([2,0,1])
+    img_cm = img_cortical_magnif_tsr(imgtsr, (80, 120), linear_separable_gridfun, demo=True)
+    #%%
+    img_cm = img_cortical_magnif_tsr(imgtsr, (80, 120), normal_gridfun, demo=True)
+    #%%
+    img_cm = img_cortical_magnif_tsr(imgtsr, (10, 190),
+            lambda img,pnt: radial_isotrop_gridfun(img, pnt, fov=20, K=20), demo=True)
 
-img_cm = img_cortical_magnif_general(img, (90, 120), radial_isotrop_gridfun, demo=True)
+    #%%  linear_separable
+    rndMagnif = get_RandomMagnifTfm(grid_generator="radial_isotrop", bdr=16, fov=20, K=0, cover_ratio=(0.05, 1))
+    mtg = make_grid([rndMagnif(imgtsr) for _ in range(9)], nrow=3)
+    mtg_pil = ToPILImage()(mtg)
+    mtg_pil.show()
+    #%%
+    rndMagnif = get_RandomMagnifTfm(grid_generator="normal", bdr=16, fov=30, K=5)
+    mtg = make_grid([rndMagnif(imgtsr) for _ in range(9)], nrow=3)
+    mtg_pil = ToPILImage()(mtg)
+    mtg_pil.show()
 
-#%%
-pnt = (80, 120)
-
-H, W, _ = img.shape
-Hhalf, Whalf = H // 2, W // 2
-Hdensity = norm.pdf(np.linspace(0, 3, Hhalf))
-Wdensity = norm.pdf(np.linspace(0, 3, Whalf))
-H_delta = (1 / Hdensity)
-W_delta = (1 / Wdensity)
-Hsum = H_delta.sum()
-Wsum = W_delta.sum()
-pY, pX = pnt
-UpDelta = pY / Hsum
-LeftDelta = pX / Wsum
-DownDelta = (H - pY) / Hsum
-RightDelta = (W - pX) / Wsum
-Left_ticks = np.cumsum(LeftDelta * W_delta[::-1])
-Right_ticks = np.cumsum(RightDelta * W_delta[::]) + pX
-Up_ticks = np.cumsum(UpDelta * H_delta[::-1])
-Down_ticks = np.cumsum(DownDelta * H_delta[::]) + pY
-X_ticks = np.hstack((Left_ticks, Right_ticks))
-Y_ticks = np.hstack((Up_ticks, Down_ticks))
-XX_intp, YY_intp = np.meshgrid(X_ticks, Y_ticks, )
-#%
-grid_y, grid_x = np.mgrid[0:H, 0:W]
-img_cm = np.zeros_like(img.astype(np.float32))
-for ci in range(3):
-    imgval = img[:, :, ci]
-    img_interp = griddata((grid_y.flatten(), grid_x.flatten()), imgval.flatten(), \
-                        (YY_intp.flatten(), XX_intp.flatten()))
-    img_cm[:, :, ci] = img_interp.reshape([H, W])
-#%% Visualize the Manified plot.
-figh, axs = plt.subplots(3, 1, figsize=(6, 12 ))
-axs[0].imshow(img_cm)
-axs[0].axis("off")
-axs[1].imshow(img)
-axs[1].axis("off")
-axs[1].scatter([pX], [pY], c='r')
-axs[2].scatter(XX_intp[::2,::2].flatten(), YY_intp[::2,::2].flatten(), c="r", s=0.25, alpha=0.2)
-axs[2].set_xlim([0, W])
-axs[2].set_ylim([0, H])
-axs[2].invert_yaxis()
-plt.show()
-#%%
-plt.scatter(XX_intp.flatten(), YY_intp.flatten(), c="r", s=1, alpha=0.1)
-plt.xlim([0, W])
-plt.ylim([0, H])
-plt.show()
-#%%
-grid_x, grid_y = np.mgrid[0:H, 0:W]
-img_cm = np.zeros_like(img.astype(np.float32))
-img_interp = griddata((grid_x.flatten(), grid_y.flatten()), img.reshape([-1, 3]), \
-                          (XX_intp.flatten(), YY_intp.flatten()))
-img_cm = img_interp.reshape(img.shape)
-#%%
-RadDistTfm = lambda R: (R < fov) * R / M + \
-        (R > fov) * ((R+K)**2 / 2 / (fov + K) + fov - (fov + K)/2) / M
-fov = 10
-M = 30
-K = 30
-xtick = np.linspace(0,100,1000)
-plt.plot(xtick, RadDistTfm(xtick, ))
-plt.show()
