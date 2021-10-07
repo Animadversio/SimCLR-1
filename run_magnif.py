@@ -64,18 +64,27 @@ parser.add_argument('--crop', action='store_true', default=False, help='Enable c
 parser.add_argument('--disable_blur', action='store_true', default=False,  # blur == True
     help='Do Deperministic Gaussian blur augmentation ')
 
-
 parser.add_argument('--magnif', action='store_true', default=False,
     help='Do random magnif augmentation')
+parser.add_argument('--gridfunc_form', default='radial_quad', type=str, choices=['radial_exp', 'radial_quad'],
+    help='Formula for the grid function')
 parser.add_argument('--sampling_bdr', default=16,
     type=int, help='border width for sampling the fixation point on the image')
+parser.add_argument('--cover_ratio', default=(0.05, 0.7),
+    type=float, nargs="+", help='Range of fovea area as a ratio of the whole image size.')
+
 parser.add_argument('--fov_size', default=20,
     type=float, help='Scaling coefficent for kernel of foveation blur')
 parser.add_argument('--K', default=20,
     type=float, help='border width for sampling the fixation point on the image')
-parser.add_argument('--cover_ratio', default=(0.05, 0.7),
-    type=float, nargs="+", help='Range of fovea area as a ratio of the whole image size.')
 
+parser.add_argument('--slope_C', default=1.5,
+    type=float, nargs="+", help='Scaling of the exponential radial function, controlling the degree of distortion introduced by '
+                                'the transform; usually in [0.75, 3.0], 0.5 will be not distorted; '
+                                '3.0 will be highly distorted. It can be a range to randomlize uniformly. ')
+
+parser.add_argument('--dry_run', action='store_true', default=False,  # blur == True
+    help='If this flag is true, then stop before training really starts. Use this to test the augmentation and arguments. ')
 
 def main():
     args = parser.parse_args()
@@ -90,6 +99,12 @@ def main():
         args.gpu_index = -1
 
     args.blur = not args.disable_blur
+    if type(args.slope_C) in [list, tuple] and len(args.slope_C) == 1:  # make it a scaler
+        args.slope_C = args.slope_C[0]
+
+    if type(args.cover_ratio) in [list, tuple] and len(args.cover_ratio) == 1:  # make it a scaler
+        args.cover_ratio = args.cover_ratio[0]
+
     print(args)
 
     # from data_aug.contrastive_learning_dataset import ContrastiveLearningDataset
@@ -102,7 +117,9 @@ def main():
     train_dataset = Contrastive_STL10_w_CortMagnif(dataset_dir=args.data,
             split="unlabeled", crop=args.crop)
     train_dataset.transform = train_dataset.get_simclr_magnif_transform(96, blur=args.blur, magnif=args.magnif, crop=args.crop,
-                                    bdr=args.sampling_bdr, fov=args.fov_size, K=args.K, cover_ratio=args.cover_ratio)
+                                    gridfunc_form=args.gridfunc_form, bdr=args.sampling_bdr,
+                                    fov=args.fov_size, K=args.K, cover_ratio=args.cover_ratio,
+                                    slope_C=args.slope_C, )
     
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True,
@@ -120,6 +137,8 @@ def main():
         simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, args=args) # args carry the global config variables here.
         mtg = visualize_augmented_dataset(train_dataset)
         mtg.save(join(simclr.writer.log_dir, "sample_data_augs.png"))  # print sample data augmentations
+        if args.dry_run:
+            return
         simclr.train(train_loader)
 
 
