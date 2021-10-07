@@ -183,7 +183,7 @@ class Contrastive_STL10_w_CortMagnif(Dataset):
         color_jitter = transforms.ColorJitter(0.8 * s, 0.8 * s, 0.8 * s, 0.2 * s)
         tfm_list = []
         if crop:
-            tfm_list += [transforms.RandomResizedCrop()]
+            tfm_list += [transforms.RandomResizedCrop(96)]
         tfm_list += [transforms.RandomHorizontalFlip(),
                   transforms.RandomApply([color_jitter], p=0.8),
                   transforms.RandomGrayscale(p=0.2),
