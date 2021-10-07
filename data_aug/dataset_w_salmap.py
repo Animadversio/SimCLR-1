@@ -129,6 +129,78 @@ class Contrastive_STL10_w_salmap(Dataset):
         #                                          std=(0.2023, 0.1994, 0.2010))])
         return data_transforms
 
+
+from .cort_magnif_tfm import get_RandomMagnifTfm
+class Contrastive_STL10_w_CortMagnif(Dataset):
+    """ Return Crops of STL10 images with saliency maps """
+
+    def __init__(self, dataset_dir=r"/scratch1/fs1/crponce/Datasets", \
+        transform=None, split="unlabeled", n_views=2,
+        crop=False):
+        """
+        Args:
+            dataset_dir (string): Directory with all the images. E:\Datasets
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+            split: "unlabeled"
+        """
+        self.dataset = datasets.STL10(dataset_dir, split=split, download=True,
+                                 transform=None,)
+
+        self.salmaps = np.load(join(dataset_dir, "stl10_unlabeled_salmaps_salicon.npy")) # stl10_unlabeled_saliency.npy
+        assert len(self.dataset) == self.salmaps.shape[0]
+        self.root_dir = dataset_dir
+        self.crop = crop
+
+        if transform is not None:
+            self.transform = transform
+        else:
+            self.transform = self.get_simclr_magnif_transform(96, s=1, blur=True, crop=self.crop, magnif=True)  # default transform pipeline.
+        self.n_views = n_views
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        img, label = self.dataset.__getitem__(idx) # img is PIL.Image, label is xxxx
+        salmap = self.salmaps[idx, :, :, :].astype('float') # numpy.ndarray
+        salmap_tsr = torch.tensor(salmap).unsqueeze(0).float() #F.interpolate(, [96, 96])
+
+        views = [img for i in range(self.n_views)]
+
+        if self.transform:
+            imgs = [self.transform(cropview) for cropview in views]
+            return imgs, -1
+        else:
+            return views, -1
+
+    @staticmethod
+    def get_simclr_magnif_transform(size, s=1, crop=False, blur=True, magnif=True,
+                                    bdr=16, fov=20, K=0, cover_ratio=(0.05, 1)):
+        """Return a set of data augmentation transformations as described in the SimCLR paper.
+
+        """
+        color_jitter = transforms.ColorJitter(0.8 * s, 0.8 * s, 0.8 * s, 0.2 * s)
+        tfm_list = []
+        if crop:
+            tfm_list += [transforms.RandomResizedCrop()]
+        tfm_list += [transforms.RandomHorizontalFlip(),
+                  transforms.RandomApply([color_jitter], p=0.8),
+                  transforms.RandomGrayscale(p=0.2),
+                  transforms.ToTensor()
+                  ]  # hard to do foveation without having a tensor
+        if magnif:
+            tfm_list.append(get_RandomMagnifTfm(grid_generator="radial_isotrop",
+                                bdr=bdr, fov=fov, K=K, cover_ratio=cover_ratio))
+
+        if blur:
+            tfm_list.append(GaussianBlur(kernel_size=int(0.1 * size), return_PIL=False))
+
+        data_transforms = transforms.Compose(tfm_list)
+        # transforms.Compose([transforms.ToTensor(),
+        #                     transforms.Normalize(mean=(0.4914, 0.4822, 0.4465),
+        #                                          std=(0.2023, 0.1994, 0.2010))])
+        return data_transforms
     
 
 
@@ -169,4 +241,17 @@ def visualize_samples(saldataset):
 # axs[1].imshow(salmap[0, 0, :, :])
 # plt.show()
 
+
+if __name__ == "__main__":
+    #%%
+    from data_aug.aug_utils import send_to_clipboard
+    from data_aug.dataset_w_salmap import Contrastive_STL10_w_CortMagnif
+    from data_aug.visualize_aug_dataset import visualize_augmented_dataset
+    dataset = Contrastive_STL10_w_CortMagnif(r"E:\Datasets")
+    #%%
+    dataset.transform = dataset.get_simclr_magnif_transform(96, blur=True, magnif=True,
+                                    bdr=16, fov=20, K=20, cover_ratio=(0.05, 0.7))
+    img_pil = visualize_augmented_dataset(dataset, n_views=10,)
+    send_to_clipboard(img_pil)
+    img_pil.show()
 
