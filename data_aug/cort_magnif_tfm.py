@@ -12,11 +12,14 @@ from skimage.transform import rescale
 from scipy.misc import face
 from scipy.stats import norm
 from scipy.interpolate import griddata
-#%%
-def get_RandomMagnifTfm(grid_generator="radial_isotrop", bdr=16, fov=20, K=20, **kwargs):
-    if grid_generator == "radial_isotrop":
-        grid_func = lambda imgtsr, pnt: radial_isotrop_gridfun(imgtsr, pnt,
-                                       fov=fov, K=K, **kwargs)
+#%
+def get_RandomMagnifTfm(grid_generator="radial_quad_isotrop", bdr=16, fov=20, K=20, slope_C=0.012, **kwargs):
+    if grid_generator == "radial_quad_isotrop":
+        grid_func = lambda imgtsr, pnt: radial_quad_isotrop_gridfun(imgtsr, pnt,
+                                                                    fov=fov, K=K, **kwargs)
+    elif grid_generator == "radial_exp_isotrop":
+        grid_func = lambda imgtsr, pnt: radial_exp_isotrop_gridfun(imgtsr, pnt,
+                                       slope_C=slope_C, **kwargs)
     elif grid_generator == "linear_separable":
         grid_func = lambda imgtsr, pnt: linear_separable_gridfun(imgtsr, pnt, **kwargs)
                                        #fov=fov, K=K, fov_ratio=None)
@@ -25,6 +28,7 @@ def get_RandomMagnifTfm(grid_generator="radial_isotrop", bdr=16, fov=20, K=20, *
 
     else:
         raise NotImplementedError
+
     def randomMagnif(imgtsr):
         _, H, W = imgtsr.shape
         pY = np.random.randint(bdr, H - bdr)
@@ -44,7 +48,7 @@ def img_cortical_magnif_tsr(imgtsr, pnt, grid_func, demo=True):
     img_cm.squeeze_(0)
     if demo:
         # % Visualize the Manified plot.
-        pX, pY = pnt
+        pY, pX = pnt
         figh, axs = plt.subplots(3, 1, figsize=(6, 12))
         axs[0].imshow(img_cm.permute([1,2,0]))
         axs[0].axis("off")
@@ -108,7 +112,7 @@ def normal_gridfun(imgtsr, pnt, cutoff_std=2.25):
     return XX_intp, YY_intp
 
 
-def radial_isotrop_gridfun(imgtsr, pnt, fov=20, K=20, cover_ratio=None):
+def radial_quad_isotrop_gridfun(imgtsr, pnt, fov=20, K=20, cover_ratio=None):
     _, H, W = imgtsr.shape
     Hhalf, Whalf = H // 2, W // 2
     pY, pX = pnt
@@ -133,20 +137,50 @@ def radial_isotrop_gridfun(imgtsr, pnt, fov=20, K=20, cover_ratio=None):
     XX_intp = pX + coef * ecc_tfm * (grid_x / ecc)  # cosine
     YY_intp = pY + coef * ecc_tfm * (grid_y / ecc)  # sine
     return XX_intp, YY_intp
+
+
+def radial_exp_isotrop_gridfun(imgtsr, pnt, slope_C=2.0, cover_ratio=None):
+    _, H, W = imgtsr.shape
+    Hhalf, Whalf = H // 2, W // 2
+    pY, pX = pnt
+    maxdist = np.sqrt(max(H - pY, pY)**2 + max(W - pX, pX)**2)  # in pixel
+    grid_y, grid_x = np.mgrid[-Hhalf+0.5:Hhalf+0.5, -Whalf+0.5:Whalf+0.5]
+    ecc2 = grid_y**2 + grid_x**2  # R2
+    ecc = np.sqrt(ecc2)
+    if type(slope_C) in [list, tuple]:
+        slope = np.random.uniform(slope_C[0], slope_C[1])
+    else:
+        slope = slope_C  # may not be optimal
+    RadDistTfm = lambda R: 1 / slope * (np.exp(slope * R / np.sqrt(Hhalf**2 + Whalf**2)) - 1)  # normalization
+    ecc_tfm = RadDistTfm(ecc, )
+    coef = maxdist / ecc_tfm.max()
+    if cover_ratio is not None:
+        if type(cover_ratio) in [list, tuple]:
+            ratio = np.random.uniform(cover_ratio[0], cover_ratio[1])
+            coef = coef * np.sqrt(ratio)
+        else:
+            coef = coef * np.sqrt(cover_ratio)  # may not be optimal
+    XX_intp = pX + coef * ecc_tfm * (grid_x / ecc)  # cosine
+    YY_intp = pY + coef * ecc_tfm * (grid_y / ecc)  # sine
+    return XX_intp, YY_intp
 #%%
 if __name__ == "__main__":
     #%%
     img = rescale(face(), (0.25, 0.25, 1))
-    imgtsr = torch.tensor(img).permute([2,0,1])
+    imgtsr = torch.tensor(img).permute([2,0,1]).float()
+    #%%
     img_cm = img_cortical_magnif_tsr(imgtsr, (80, 120), linear_separable_gridfun, demo=True)
     #%%
     img_cm = img_cortical_magnif_tsr(imgtsr, (80, 120), normal_gridfun, demo=True)
     #%%
     img_cm = img_cortical_magnif_tsr(imgtsr, (10, 190),
-            lambda img,pnt: radial_isotrop_gridfun(img, pnt, fov=20, K=20), demo=True)
+                                     lambda img,pnt: radial_quad_isotrop_gridfun(img, pnt, fov=20, K=20), demo=True)
+    #%%
+    img_cm = img_cortical_magnif_tsr(imgtsr, (100, 30),
+            lambda img, pnt: radial_exp_isotrop_gridfun(img, pnt, slope_C=2.0, cover_ratio=0.4), demo=True)
 
     #%%  linear_separable
-    rndMagnif = get_RandomMagnifTfm(grid_generator="radial_isotrop", bdr=16, fov=20, K=0, cover_ratio=(0.05, 1))
+    rndMagnif = get_RandomMagnifTfm(grid_generator="radial_quad_isotrop", bdr=16, fov=20, K=0, cover_ratio=(0.05, 1))
     mtg = make_grid([rndMagnif(imgtsr) for _ in range(9)], nrow=3)
     mtg_pil = ToPILImage()(mtg)
     mtg_pil.show()
@@ -155,4 +189,8 @@ if __name__ == "__main__":
     mtg = make_grid([rndMagnif(imgtsr) for _ in range(9)], nrow=3)
     mtg_pil = ToPILImage()(mtg)
     mtg_pil.show()
-
+    #%%
+    rndMagnif = get_RandomMagnifTfm(grid_generator="radial_exp_isotrop", bdr=64, slope_C=(0.75, 3.0), cover_ratio=(0.1, 0.5))
+    mtg = make_grid([rndMagnif(imgtsr) for _ in range(9)], nrow=3)
+    mtg_pil = ToPILImage()(mtg)
+    mtg_pil.show()

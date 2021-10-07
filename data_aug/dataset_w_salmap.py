@@ -175,10 +175,14 @@ class Contrastive_STL10_w_CortMagnif(Dataset):
             return views, -1
 
     @staticmethod
-    def get_simclr_magnif_transform(size, s=1, crop=False, blur=True, magnif=True,
-                                    bdr=16, fov=20, K=0, cover_ratio=(0.05, 1)):
+    def get_simclr_magnif_transform(size, s=1, crop=False, blur=True, magnif=True, gridfunc_form="radial_quad",
+                                    bdr=16, fov=20, K=0, slope_C=1.5, cover_ratio=(0.05, 1)):
         """Return a set of data augmentation transformations as described in the SimCLR paper.
-
+        bdr
+        fov
+        K
+        slope_C : Slope in the radial exp mapping
+        cover_ratio
         """
         color_jitter = transforms.ColorJitter(0.8 * s, 0.8 * s, 0.8 * s, 0.2 * s)
         tfm_list = []
@@ -190,8 +194,14 @@ class Contrastive_STL10_w_CortMagnif(Dataset):
                   transforms.ToTensor()
                   ]  # hard to do foveation without having a tensor
         if magnif:
-            tfm_list.append(get_RandomMagnifTfm(grid_generator="radial_isotrop",
-                                bdr=bdr, fov=fov, K=K, cover_ratio=cover_ratio))
+            if gridfunc_form == "radial_quad":
+                tfm_list.append(get_RandomMagnifTfm(grid_generator="radial_quad_isotrop",
+                                    bdr=bdr, fov=fov, K=K, cover_ratio=cover_ratio))
+            elif gridfunc_form == "radial_exp":
+                tfm_list.append(get_RandomMagnifTfm(grid_generator="radial_exp_isotrop",
+                                    slope_C=slope_C, cover_ratio=cover_ratio))
+            else:
+                raise NotImplemented
 
         if blur:
             tfm_list.append(GaussianBlur(kernel_size=int(0.1 * size), return_PIL=False))
@@ -213,7 +223,7 @@ def visualize_samples(saldataset):
         axs[0, i].axis("off")
         axs[1, i].imshow(salmap[0])
         axs[1, i].axis("off")
-    figh.savefig("/scratch1/fs1/crponce/Datasets/example%03d.png"%np.random.randint(1E3))
+    figh.savefig("/scratch1/fs1/crponce/Datasets/example%03d.png" % np.random.randint(1E3))
 # face_dataset = FaceLandmarksDataset(csv_file='data/faces/face_landmarks.csv',
 #                                     root_dir='data/faces/')
 #
@@ -250,8 +260,14 @@ if __name__ == "__main__":
     dataset = Contrastive_STL10_w_CortMagnif(r"E:\Datasets")
     #%%
     dataset.transform = dataset.get_simclr_magnif_transform(96, blur=True, magnif=True,
-                                    bdr=16, fov=20, K=20, cover_ratio=(0.05, 0.7))
+                        bdr=16, gridfunc_form="radial_quad", fov=20, K=20, cover_ratio=(0.05, 0.7))
     img_pil = visualize_augmented_dataset(dataset, n_views=10,)
+    send_to_clipboard(img_pil)
+    img_pil.show()
+    # %%
+    dataset.transform = dataset.get_simclr_magnif_transform(96, blur=True, magnif=True,
+                        bdr=16, gridfunc_form="radial_exp", slope_C=(0.75, 3.0), cover_ratio=(0.05, 0.7))
+    img_pil = visualize_augmented_dataset(dataset, n_views=10, )
     send_to_clipboard(img_pil)
     img_pil.show()
 
