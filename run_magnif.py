@@ -54,30 +54,26 @@ parser.add_argument('--n-views', default=2, type=int, metavar='N',
 parser.add_argument('--gpu-index', default=0, type=int, help='Gpu index.')
 
 
-
 parser.add_argument('--log_root', default="/scratch1/fs1/crponce/simclr_runs", \
     type=str, help='root folder to put logs')
 parser.add_argument('--run_label', default="", \
     type=str, help='folder prefix to identify runs')
 
-parser.add_argument('--crop_temperature', default=1.5, \
-    type=float, help='temperature of sampling ')
-parser.add_argument('--pad_img', action='store_true', default=False, \
-    help='Pad image if needed')
-parser.add_argument('--sal_control', action='store_true', default=False, \
-    help='Use the flat saliency map as control, no information')
 
-parser.add_argument('--orig_cropper', action='store_true', default=False, \
-    help='Use the Original RandomResizedCrop  cropper')
-parser.add_argument('--disable_crop', action='store_true', default=False, \
-    help='Disable crop')
-parser.add_argument('--disable_blur', action='store_true', default=False, # blur == True
+parser.add_argument('--crop', action='store_true', default=False, help='Enable crop')
+parser.add_argument('--disable_blur', action='store_true', default=False,  # blur == True
     help='Do Deperministic Gaussian blur augmentation ')
-parser.add_argument('--foveation', action='store_true', default=False, \
-    help='Do random foveation augmentation')
-parser.add_argument('--kerW_coef', default=0.06,
+
+
+parser.add_argument('--magnif', action='store_true', default=False,
+    help='Do random magnif augmentation')
+parser.add_argument('--sampling_bdr', default=16,
+    type=int, help='border width for sampling the fixation point on the image')
+parser.add_argument('--fov_size', default=20,
     type=float, help='Scaling coefficent for kernel of foveation blur')
-parser.add_argument('--fov_area_rng', default=(0.01, 0.5),
+parser.add_argument('--K', default=20,
+    type=float, help='border width for sampling the fixation point on the image')
+parser.add_argument('--cover_ratio', default=(0.05, 0.7),
     type=float, nargs="+", help='Range of fovea area as a ratio of the whole image size.')
 
 
@@ -99,21 +95,14 @@ def main():
     # from data_aug.contrastive_learning_dataset import ContrastiveLearningDataset
     # dataset = ContrastiveLearningDataset(args.data)
     # train_dataset = dataset.get_dataset(args.dataset_name, args.n_views)
-    from data_aug.dataset_w_salmap import Contrastive_STL10_w_salmap
+    from data_aug.dataset_w_salmap import Contrastive_STL10_w_salmap, Contrastive_STL10_w_CortMagnif
     from data_aug.saliency_random_cropper import RandomResizedCrop_with_Density, RandomCrop_with_Density, RandomResizedCrop
     from data_aug.visualize_aug_dataset import visualize_augmented_dataset
 
-    cropper = RandomResizedCrop_with_Density(96, temperature=args.crop_temperature, pad_if_needed=args.pad_img)
-    
-    train_dataset = Contrastive_STL10_w_salmap(dataset_dir=args.data, 
-            density_cropper=cropper, split="unlabeled", salmap_control=args.sal_control,
-            disable_crop=args.disable_crop)
-    if args.orig_cropper:
-        rndcropper = RandomResizedCrop(96, )
-        train_dataset.dense_cropper = lambda img, salmap: rndcropper(img)
-    train_dataset.transform = train_dataset.get_simclr_post_crop_transform(96,
-                                                blur=args.blur, foveation=args.foveation,
-                                                kerW_coef=args.kerW_coef, fov_area_rng=args.fov_area_rng, bdr=12)
+    train_dataset = Contrastive_STL10_w_CortMagnif(dataset_dir=args.data,
+            split="unlabeled", crop=args.crop)
+    train_dataset.transform = train_dataset.get_simclr_magnif_transform(96, blur=args.blur, magnif=args.magnif, crop=args.crop,
+                                    bdr=args.sampling_bdr, fov=args.fov_size, K=args.K, cover_ratio=args.cover_ratio)
     
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True,

@@ -25,6 +25,7 @@ def visualize_augmented_dataset(train_dataset, n_views=10,
     train_dataset.n_views = 2
     return ToPILImage()(mtg)
 
+
 def visualize_samples(train_dataset, idxs=None):
     imgs, _ = train_dataset[1]
     figh, axs = plt.subplots(len(imgs), 10, figsize=(15, len(imgs) * 1.6))
