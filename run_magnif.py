@@ -66,6 +66,12 @@ parser.add_argument('--disable_blur', action='store_true', default=False,  # blu
 
 parser.add_argument('--magnif', action='store_true', default=False,
     help='Do random magnif augmentation')
+parser.add_argument('--sal_sample', action='store_true', default=False,
+    help='Use saliency map to guide sampling or not')
+parser.add_argument('--sample_temperature', default=1.5, \
+    type=float, help='temperature of sampling ')
+
+
 parser.add_argument('--gridfunc_form', default='radial_quad', type=str, choices=['radial_exp', 'radial_quad'],
     help='Formula for the grid function')
 parser.add_argument('--sampling_bdr', default=16,
@@ -112,15 +118,33 @@ def main():
     # train_dataset = dataset.get_dataset(args.dataset_name, args.n_views)
     from data_aug.dataset_w_salmap import Contrastive_STL10_w_salmap, Contrastive_STL10_w_CortMagnif
     from data_aug.saliency_random_cropper import RandomResizedCrop_with_Density, RandomCrop_with_Density, RandomResizedCrop
+    from data_aug.cort_magnif_tfm import get_RandomMagnifTfm
     from data_aug.visualize_aug_dataset import visualize_augmented_dataset
 
     train_dataset = Contrastive_STL10_w_CortMagnif(dataset_dir=args.data,
-            split="unlabeled", crop=args.crop)
-    train_dataset.transform = train_dataset.get_simclr_magnif_transform(96, blur=args.blur, magnif=args.magnif, crop=args.crop,
-                                    gridfunc_form=args.gridfunc_form, bdr=args.sampling_bdr,
-                                    fov=args.fov_size, K=args.K, cover_ratio=args.cover_ratio,
-                                    slope_C=args.slope_C, )
-    
+            split="unlabeled", crop=args.crop, magnif=args.magnif, sal_sample=args.sal_sample, )
+    train_dataset.transform = train_dataset.get_simclr_pre_magnif_transform(96,
+                        blur=args.blur, crop=args.crop, )
+    # train_dataset.transform = train_dataset.get_simclr_magnif_transform(96,
+    #                     blur=args.blur, crop=args.crop, magnif=args.magnif,
+    #                     sal_sample=args.sal_sample, sample_temperature=args.sample_temperature,
+    #                     gridfunc_form=args.gridfunc_form, bdr=args.sampling_bdr,
+    #                     fov=args.fov_size, K=args.K, cover_ratio=args.cover_ratio,
+    #                     slope_C=args.slope_C, )
+    if args.magnif:
+        if args.gridfunc_form == "radial_quad":
+            train_dataset.magnifier = get_RandomMagnifTfm(grid_generator="radial_quad_isotrop",
+                                bdr=args.sampling_bdr, fov=args.fov_size, K=args.K, cover_ratio=args.cover_ratio,
+                                sal_sample=args.sal_sample, sample_temperature=args.sample_temperature,)
+        elif args.gridfunc_form == "radial_exp":
+            train_dataset.magnifier = get_RandomMagnifTfm(grid_generator="radial_exp_isotrop",
+                                bdr=args.sampling_bdr, slope_C=args.slope_C, cover_ratio=args.cover_ratio,
+                                sal_sample=args.sal_sample, sample_temperature=args.sample_temperature,)
+        else:
+            raise ValueError
+    else:
+        train_dataset.magnifier = None
+
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True,
         num_workers=args.workers, pin_memory=True, drop_last=True)
