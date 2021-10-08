@@ -2,7 +2,7 @@
 #BSUB -n 8
 #BSUB -q general
 #BSUB -G compute-crponce
-#BSUB -J 'simclr_fast_magnif_exps[12-16]'
+#BSUB -J 'simclr_fast_magnif_exps[12-17]'
 #BSUB -gpu "num=1:gmodel=TeslaV100_SXM2_32GB:mode=exclusive_process"
 #BSUB -R 'gpuhost'
 #BSUB -R 'select[mem>48G]'
