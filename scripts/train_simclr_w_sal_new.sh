@@ -1,5 +1,5 @@
 #!/bin/bash
-#BSUB -n 8
+#BSUB -n 4
 #BSUB -q general
 #BSUB -G compute-crponce
 #BSUB -J 'simclr_fast_sal_new_train[14-17]'

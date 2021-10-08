@@ -18,18 +18,18 @@
 echo "$LSB_JOBINDEX"
 
 param_list=\
-'--out_dim 128 --batch-size 256 --run_label proj128_eval_sal_T3.0_pad --crop_temperature 3.0
---out_dim 128 --batch-size 256 --run_label proj128_eval_sal_T3.0      --crop_temperature 3.0 --pad_img False
---out_dim 128 --batch-size 256 --run_label proj128_eval_sal_T0.2_pad --crop_temperature 0.2
---out_dim 128 --batch-size 256 --run_label proj128_eval_sal_T0.2     --crop_temperature 0.2 --pad_img False
---out_dim 128 --batch-size 256 --run_label proj128_eval_sal_T0.1_pad --crop_temperature 0.1
---out_dim 128 --batch-size 256 --run_label proj128_eval_sal_T0.1     --crop_temperature 0.1 --pad_img False
---out_dim 128 --batch-size 256 --run_label proj128_eval_sal_T0.02_pad --crop_temperature 0.02
---out_dim 128 --batch-size 256 --run_label proj128_eval_sal_T0.02     --crop_temperature 0.02 --pad_img False
+'--out_dim 128 --run_label proj128_eval_sal_T3.0_pad --crop_temperature 3.0
+--out_dim 128 --run_label proj128_eval_sal_T3.0      --crop_temperature 3.0 --pad_img False
+--out_dim 128 --run_label proj128_eval_sal_T0.2_pad --crop_temperature 0.2
+--out_dim 128 --run_label proj128_eval_sal_T0.2     --crop_temperature 0.2 --pad_img False
+--out_dim 128 --run_label proj128_eval_sal_T0.1_pad --crop_temperature 0.1
+--out_dim 128 --run_label proj128_eval_sal_T0.1     --crop_temperature 0.1 --pad_img False
+--out_dim 128 --run_label proj128_eval_sal_T0.02_pad --crop_temperature 0.02
+--out_dim 128 --run_label proj128_eval_sal_T0.02     --crop_temperature 0.02 --pad_img False
 '
 
 export extra_param="$(echo "$param_list" | head -n $LSB_JOBINDEX | tail -1)"
 echo "$extra_param"
 
 cd ~/SimCLR-torch/
-python run_salcrop.py -data $SCRATCH1/Datasets -dataset-name stl10 --workers 16 --ckpt_every_n_epocs 5 --epochs 100  $extra_param 
+python run_salcrop.py -data $SCRATCH1/Datasets -dataset-name stl10 --workers 16 --ckpt_every_n_epocs 5 --epochs 100  --batch-size 256  $extra_param 
