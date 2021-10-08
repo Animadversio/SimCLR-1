@@ -1,7 +1,7 @@
-from io import BytesIO
-import win32clipboard
 def send_to_clipboard(image):
     """https://stackoverflow.com/questions/34322132/copy-image-to-clipboard"""
+    from io import BytesIO
+    import win32clipboard # this is not in minimal env.
     output = BytesIO()
     image.convert('RGB').save(output, 'BMP')
     data = output.getvalue()[14:]

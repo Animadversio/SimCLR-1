@@ -15,7 +15,7 @@
 # export LSF_DOCKER_SHM_SIZE=16g
 # export LSF_DOCKER_VOLUMES="$HOME:$HOME $SCRATCH1:$SCRATCH1 $STORAGE1:$STORAGE1"
 # export LSF_DOCKER_VOLUMES="$HOME:$HOME $SCRATCH1:$SCRATCH1"
-
+# export CUDA_LAUNCH_BLOCKING=1
 echo "$LSB_JOBINDEX"
 
 param_list=\
@@ -36,7 +36,6 @@ param_list=\
 --run_label proj256_eval_magnif_salmap_T0_3_cvr_0_01-0_35 --magnif --sal_sample --sample_temperature 0.3 --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16
 --run_label proj256_eval_magnif_salmap_T3_0_cvr_0_01-0_35 --magnif --sal_sample --sample_temperature 3.0 --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16
 --run_label proj256_eval_magnif_salmap_T10_0_cvr_0_01-0_35 --magnif --sal_sample --sample_temperature 10.0 --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16
-
 --run_label proj256_eval_magnif_salmap_T1.0_cvr_0_01-0_35 --magnif --sal_sample --sample_temperature 1.0 --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16
 --run_label proj256_eval_magnif_salmap_T3.0_cvr_0_01-0_35 --magnif --sal_sample --sample_temperature 1.5 --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16
 --run_label proj256_eval_magnif_salmap_T6.0_cvr_0_01-0_35 --magnif --sal_sample --sample_temperature 3.0 --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16
