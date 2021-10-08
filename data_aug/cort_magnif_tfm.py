@@ -32,7 +32,7 @@ def get_RandomMagnifTfm(grid_generator="radial_quad_isotrop", bdr=16, fov=20, K=
     def randomMagnif(imgtsr, logdensity=None):
         _, H, W = imgtsr.shape
         if sal_sample and logdensity is not None:
-            print("sample with saliency")
+            # print("sample with saliency")
             density = torch.exp((logdensity - logdensity.max()) / sample_temperature)
             # set the border density to be 0,
             density_mat = torch.zeros_like(density[0, 0, :, :])
