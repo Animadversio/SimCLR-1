@@ -8,7 +8,7 @@ from torch.cuda.amp import GradScaler, autocast
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from utils import save_config_file, accuracy, save_checkpoint
-
+import numpy as np
 from utils import accuracy, save_checkpoint, save_config_file
 from linear_eval import evaluation
 
@@ -23,7 +23,10 @@ class SimCLR(object):
         self.optimizer = kwargs['optimizer']
         self.scheduler = kwargs['scheduler']
         current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-        self.writer = SummaryWriter(log_dir=os.path.join(self.args.log_root, self.args.run_label + "_" + current_time), )
+        log_dir_tmp = os.path.join(self.args.log_root, self.args.run_label + "_" + current_time)
+        if os.path.isdir(log_dir_tmp):
+            log_dir_tmp += "-%03"%np.randint(1000)
+        self.writer = SummaryWriter(log_dir=log_dir_tmp, )
         # self.writer.log_dir = self.args.log_root + self.writer.log_dir
         logging.basicConfig(filename=os.path.join(self.writer.log_dir, 'training.log'), level=logging.DEBUG)
         self.criterion = torch.nn.CrossEntropyLoss().to(self.args.device)
