@@ -136,7 +136,7 @@ class Contrastive_STL10_w_CortMagnif(Dataset):
 
     def __init__(self, dataset_dir=r"/scratch1/fs1/crponce/Datasets", \
         transform=None, split="unlabeled", n_views=2,
-        crop=False):
+        crop=False, magnif=False, sal_sample=False, ):
         """
         Args:
             dataset_dir (string): Directory with all the images. E:\Datasets
@@ -151,11 +151,14 @@ class Contrastive_STL10_w_CortMagnif(Dataset):
         assert len(self.dataset) == self.salmaps.shape[0]
         self.root_dir = dataset_dir
         self.crop = crop
+        self.magnif = magnif
+        self.magnifier = None 
+        self.sal_sample = sal_sample  # used in magnifier, not used here ! can be omited
 
         if transform is not None:
             self.transform = transform
         else:
-            self.transform = self.get_simclr_magnif_transform(96, s=1, blur=True, crop=self.crop, magnif=True)  # default transform pipeline.
+            self.transform = self.get_simclr_pre_magnif_transform(96, s=1, blur=True, crop=self.crop, )  # default transform pipeline.
         self.n_views = n_views
 
     def __len__(self):
@@ -163,21 +166,50 @@ class Contrastive_STL10_w_CortMagnif(Dataset):
 
     def __getitem__(self, idx):
         img, label = self.dataset.__getitem__(idx) # img is PIL.Image, label is xxxx
-        salmap = self.salmaps[idx, :, :, :].astype('float') # numpy.ndarray
-        salmap_tsr = torch.tensor(salmap).unsqueeze(0).float() #F.interpolate(, [96, 96])
+        salmap = self.salmaps[idx, :, :, :].astype('float')  # numpy.ndarray
+        salmap_tsr = torch.tensor(salmap).unsqueeze(0).float()  #F.interpolate(, [96, 96])
 
         views = [img for i in range(self.n_views)]
 
         if self.transform:
             imgs = [self.transform(cropview) for cropview in views]
-            return imgs, -1
         else:
-            return views, -1
+            imgs = views
+
+        if self.magnif and self.magnifier is not None:
+            finalviews = [self.magnifier(img, salmap_tsr) for img in imgs]
+        else:
+            finalviews = imgs
+
+        return finalviews, -1
 
     @staticmethod
-    def get_simclr_magnif_transform(size, s=1, crop=False, blur=True, magnif=True, gridfunc_form="radial_quad",
-                                    bdr=16, fov=20, K=0, slope_C=1.5, cover_ratio=(0.05, 1)):
+    def get_simclr_pre_magnif_transform(size, s=1, crop=False, blur=True, ):
         """Return a set of data augmentation transformations as described in the SimCLR paper.
+        """
+        color_jitter = transforms.ColorJitter(0.8 * s, 0.8 * s, 0.8 * s, 0.2 * s)
+        tfm_list = []
+        if crop:
+            tfm_list += [transforms.RandomResizedCrop(96)]
+        tfm_list += [transforms.RandomHorizontalFlip(),
+                     transforms.RandomApply([color_jitter], p=0.8),
+                     transforms.RandomGrayscale(p=0.2),
+                     transforms.ToTensor()
+                     ]  # hard to do foveation without having a tensor
+        if blur:
+            tfm_list.append(GaussianBlur(kernel_size=int(0.1 * size), return_PIL=False))
+        data_transforms = transforms.Compose(tfm_list)
+        # transforms.Compose([transforms.Normalize(mean=(0.4914, 0.4822, 0.4465),
+        #                                          std=(0.2023, 0.1994, 0.2010))])
+        return data_transforms
+
+    @staticmethod
+    def get_simclr_magnif_transform(size, s=1, crop=False, blur=True,
+                                    magnif=True, gridfunc_form="radial_quad",
+                                    bdr=16, fov=20, K=0, slope_C=1.5, cover_ratio=(0.05, 1),
+                                    sal_sample=False, sample_temperature=1.5,):
+        """Return a set of data augmentation transformations as described in the SimCLR paper.
+        OBSOLETE, USE the above function instead
         bdr
         fov
         K
@@ -196,15 +228,17 @@ class Contrastive_STL10_w_CortMagnif(Dataset):
         if magnif:
             if gridfunc_form == "radial_quad":
                 tfm_list.append(get_RandomMagnifTfm(grid_generator="radial_quad_isotrop",
-                                    bdr=bdr, fov=fov, K=K, cover_ratio=cover_ratio))
+                                                    bdr=bdr, fov=fov, K=K,
+                                                    cover_ratio=cover_ratio))
             elif gridfunc_form == "radial_exp":
                 tfm_list.append(get_RandomMagnifTfm(grid_generator="radial_exp_isotrop",
-                                    slope_C=slope_C, cover_ratio=cover_ratio))
+                                                    bdr=bdr, slope_C=slope_C,
+                                                    cover_ratio=cover_ratio))
             else:
                 raise NotImplemented
 
         if blur:
-            tfm_list.append(GaussianBlur(kernel_size=int(0.1 * size), return_PIL=False))
+                tfm_list.append(GaussianBlur(kernel_size=int(0.1 * size), return_PIL=False))
 
         data_transforms = transforms.Compose(tfm_list)
         # transforms.Compose([transforms.ToTensor(),

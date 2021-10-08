@@ -14,7 +14,8 @@ from scipy.stats import norm
 from scipy.interpolate import griddata
 from .aug_utils import unravel_indices
 
-def get_RandomMagnifTfm(grid_generator="radial_quad_isotrop", bdr=16, fov=20, K=20, slope_C=0.012, **kwargs):
+def get_RandomMagnifTfm(grid_generator="radial_quad_isotrop", bdr=16, fov=20, K=20, slope_C=0.012, 
+    sal_sample=False, sample_temperature=1.5, **kwargs):
     if grid_generator == "radial_quad_isotrop":
         grid_func = lambda imgtsr, pnt: radial_quad_isotrop_gridfun(imgtsr, pnt,
                                                                     fov=fov, K=K, **kwargs)
@@ -28,11 +29,17 @@ def get_RandomMagnifTfm(grid_generator="radial_quad_isotrop", bdr=16, fov=20, K=
     else:
         raise NotImplementedError
 
-    def randomMagnif(imgtsr, density=None):
+    def randomMagnif(imgtsr, logdensity=None):
         _, H, W = imgtsr.shape
-        if density is not None:
-            flat_idx = torch.multinomial(density.flatten(), 1, replacement=True).cpu()
-            cnt_coord = unravel_indices(flat_idx, density[0, 0, :, :].shape)
+        if sal_sample and logdensity is not None:
+            print("sample with saliency")
+            density = torch.exp((logdensity - logdensity.max()) / sample_temperature)
+            # set the border density to be 0,
+            density_mat = torch.zeros_like(density[0, 0, :, :])
+            density_mat[bdr:H - bdr, bdr: W - bdr] = density[0, 0, bdr:H - bdr, bdr: W - bdr]
+            # sample from density
+            flat_idx = torch.multinomial(density_mat.flatten(), 1, replacement=True).cpu()
+            cnt_coord = unravel_indices(flat_idx, density_mat.shape)
             pY, pX = cnt_coord[0, 0].item(), cnt_coord[0, 1].item()
         else:
             pY = np.random.randint(bdr, H - bdr)
