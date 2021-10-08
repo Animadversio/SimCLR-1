@@ -6,7 +6,39 @@ from torchvision.transforms import ToPILImage, ToTensor
 from torchvision.transforms import RandomResizedCrop
 from data_aug.dataset_w_salmap import Contrastive_STL10_w_salmap
 from data_aug.saliency_random_cropper import RandomResizedCrop_with_Density, RandomCrop_with_Density
-#%%
+
+def visualize_saliency_maps_w_imgs(train_dataset, plot_density=False, temperature=3, bdr=16,
+    idxs=(96659, 54019, 88327, 81148, 98469, 77493, 131, 58202, 66666, 65017, 1973, 29975),
+    ):
+    idx_col = [] if idxs is None else idxs
+    ncols = 2 + plot_density
+    figh, axs = plt.subplots(12, ncols, figsize=(ncols * 1.6, 12 * 1.6))
+    for i in range(12):
+        if idxs is None:
+            idx = np.random.randint(1E5)
+            idx_col.append(idx)
+        else:
+            idx = idxs[i]
+
+        img, label = train_dataset.dataset.__getitem__(idx)  # img is PIL.Image, label is xxxx
+        salmap = train_dataset.salmaps[idx, :, :, :].astype('float')
+        axs[i, 0].imshow(np.array(img))
+        axs[i, 0].axis("off")
+        axs[i, 1].imshow(salmap.squeeze())
+        axs[i, 1].axis("off")
+        if plot_density:
+            density = np.exp((salmap - salmap.max()) / temperature)
+            if bdr > 0:  # set the border density to be 0,
+                density_mat = np.zeros_like(density[0, :, :])
+                density_mat[bdr: -bdr, bdr: -bdr] = density[0, bdr:-bdr, bdr:-bdr]
+            else:
+                density_mat = density[0]
+            axs[i, 2].imshow(density_mat)
+            axs[i, 2].axis("off")
+
+    figh.show()
+    return figh, idx_col
+
 def visualize_augmented_dataset(train_dataset, n_views=10,
         idxs=(96659, 54019, 88327, 81148, 98469, 77493, 131, 58202, 66666, 65017, 1973, 29975), ):
     train_dataset.n_views = n_views
@@ -89,3 +121,13 @@ if __name__ == '__main__':
                             kerW_coef=0.06, fov_area_rng=[0.1, 0.5], bdr=12)
     idxs = [96659, 54019, 88327, 81148, 98469, 77493, 131, 58202, 66666, 65017]
     _, idxs = visualize_samples(train_dataset, idxs)
+    #%%
+    from data_aug.dataset_w_salmap import Contrastive_STL10_w_CortMagnif, get_RandomMagnifTfm
+    train_dataset = Contrastive_STL10_w_CortMagnif(dataset_dir=r"E:\Datasets",
+        transform=None, split="unlabeled", n_views=2,
+        crop=False, magnif=True, sal_sample=False, )
+    train_dataset.magnifier = get_RandomMagnifTfm(grid_generator="radial_quad_isotrop",
+                  bdr=16, fov=20, K=20, slope_C=0.012,
+                  sal_sample=False, sample_temperature=1.5,)
+    #%%
+    visualize_saliency_maps_w_imgs(train_dataset, temperature=3, bdr=16)
