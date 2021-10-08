@@ -64,6 +64,8 @@ parser.add_argument('--crop_temperature', default=1.5, \
     type=float, help='temperature of sampling ')
 parser.add_argument('--pad_img', action='store_true', default=False, \
     help='Pad image if needed')
+parser.add_argument('--bdr', type=int, default=0,  \
+    help='masked out border pixels')
 parser.add_argument('--sal_control', action='store_true', default=False, \
     help='Use the flat saliency map as control, no information')
 
@@ -103,7 +105,8 @@ def main():
     from data_aug.saliency_random_cropper import RandomResizedCrop_with_Density, RandomCrop_with_Density, RandomResizedCrop
     from data_aug.visualize_aug_dataset import visualize_augmented_dataset
 
-    cropper = RandomResizedCrop_with_Density(96, temperature=args.crop_temperature, pad_if_needed=args.pad_img)
+    cropper = RandomResizedCrop_with_Density(96, temperature=args.crop_temperature, pad_if_needed=args.pad_img,
+                                             bdr=args.bdr)
     
     train_dataset = Contrastive_STL10_w_salmap(dataset_dir=args.data, 
             density_cropper=cropper, split="unlabeled", salmap_control=args.sal_control,

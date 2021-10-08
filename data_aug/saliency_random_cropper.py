@@ -258,7 +258,7 @@ class RandomResizedCrop_with_Density(torch.nn.Module):
 
   def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.),
       interpolation=PIL.Image.BILINEAR if OLD_TV_VER else TF.InterpolationMode.BILINEAR,
-      temperature=1.5, pad_if_needed=False):
+      temperature=1.5, pad_if_needed=False, bdr=0):
     super().__init__()
     self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
@@ -282,11 +282,12 @@ class RandomResizedCrop_with_Density(torch.nn.Module):
     self.ratio = ratio
     self.temperature = temperature
     self.pad_if_needed = pad_if_needed
+    self.bdr = bdr  # number of border pixels that are prohibited from being sampled.
 
 
   @staticmethod
   def get_params(
-      img: Tensor, scale: List[float], ratio: List[float], density=None
+      img: Tensor, scale: List[float], ratio: List[float], density=None, bdr=0
   ) -> Tuple[int, int, int, int]:
     """Get parameters for ``crop`` for a random sized crop.
 
@@ -312,6 +313,10 @@ class RandomResizedCrop_with_Density(torch.nn.Module):
       w = int(round(math.sqrt(target_area * aspect_ratio)))
       h = int(round(math.sqrt(target_area / aspect_ratio)))
       if density is not None:
+        if bdr > 0:
+          density_mat = torch.zeros_like(density)
+          density_mat[:, :, bdr:-bdr, bdr:-bdr] = density[:, :, bdr:-bdr, bdr:-bdr]
+          density = density_mat
         flat_idx = torch.multinomial(density.flatten(), 1, replacement=True).cpu()
         cnt_coord = unravel_indices(flat_idx, density[0, 0, :, :].shape)
         ci, cj = cnt_coord[0, 0].item(), cnt_coord[0, 1].item()
@@ -359,7 +364,8 @@ class RandomResizedCrop_with_Density(torch.nn.Module):
       # to 0
     else: 
       densitymap = None
-    i, j, h, w = self.get_params(img, self.scale, self.ratio, densitymap)
+    i, j, h, w = self.get_params(img, self.scale, self.ratio, densitymap,
+                                 bdr=self.bdr)
     width, height = TF._get_image_size(img)
     if self.pad_if_needed:
       new_i, new_j = i, j
