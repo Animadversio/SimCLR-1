@@ -36,6 +36,8 @@ parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                     dest='weight_decay')
 parser.add_argument('--seed', default=None, type=int,
                     help='seed for initializing training. ')
+parser.add_argument('--randomize_seed', action='store_true', default=False,
+                    help='Set randomized seed for the experiment')
 parser.add_argument('--disable-cuda', action='store_true',
                     help='Disable CUDA')
 parser.add_argument('--fp16-precision', action='store_true',
@@ -144,6 +146,10 @@ def main():
             raise ValueError
     else:
         train_dataset.magnifier = None
+    
+    if args.randomize_seed:
+        seed = torch.random.seed()
+        args.seed = seed
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True,

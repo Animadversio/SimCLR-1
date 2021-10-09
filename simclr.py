@@ -1,3 +1,4 @@
+"""This is the core traininig loop of simclr"""
 import logging
 import os
 import sys
