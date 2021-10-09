@@ -104,10 +104,6 @@ train_acc_arr, test_acc_arr, simclr_acc_arr, eval_timestep, simclr_timestep, \
 for ei in range(param_table.shape[0]):
     print("cover_ratio [%.2f, %.2f] trainACC %.4f  testACC %.4f  simclrACC %.4f"%(*param_table.cover_ratio[ei], train_acc_arr[ei,-2], test_acc_arr[ei,-2], simclr_acc_arr[ei,-2]))
 
-
-
-
-
 #%%
 expdir_col = ["proj256_eval_sal_new_T0.01_Oct06_19-02-51",
         "proj256_eval_sal_new_T0.1_Oct06_19-02-51",
@@ -182,24 +178,24 @@ plt.show()
 # print(event_acc.Tags())
 # 'scalars': ['eval/train_loss', 'eval/train_acc', 'eval/test_loss', 'eval/test_acc', 'epoch', 'loss', 'acc/top1', 'acc/top5', 'learning_rate'],
 #%%
-proj256_eval_magnif_bsl_Oct07_05-11-35
-proj256_eval_magnif_bsl_Oct07_19-46-29
-proj256_eval_magnif_cvr_0_01-1_50_Oct07_05-06-53
-proj256_eval_magnif_cvr_0_05-0_35_Oct07_05-06-55
-proj256_eval_magnif_cvr_0_01-0_35_Oct07_05-06-57
-proj256_eval_magnif_cvr_0_05-0_70_Oct07_05-11-35
-proj256_eval_magnif_cvr_0_05-0_70_Oct07_19-46-29
-proj256_eval_magnif_cvr_0_01-0_35_Oct07_19-46-40
-proj256_eval_magnif_cvr_0_05-0_35_Oct07_19-46-40
-proj256_eval_magnif_cvr_0_01-1_50_Oct07_19-46-40
-proj256_eval_magnif_cvr_0_05-0_35_Oct08_02-19-24
-proj256_eval_magnif_cvr_0_05-0_35_Oct08_02-19-26
-proj256_eval_magnif_cvr_0_05-0_35_Oct08_02-19-31
-proj256_eval_magnif_exp_cvr_0_05-1_00_slp_1_50_Oct07_19-21-47
-proj256_eval_magnif_exp_cvr_0_05-1_00_slp_0_75-3_00_Oct07_19-38-20
-proj256_eval_magnif_exp_cvr_0_05-1_00_slp_0_75-3_00_Oct07_19-22-11
-proj256_eval_magnif_exp_cvr_0_05-0_50_slp_1_50_Oct07_19-25-55
-proj256_eval_magnif_exp_cvr_0_05-0_50_slp_0_75-3_00_Oct07_19-22-28
+"proj256_eval_magnif_bsl_Oct07_05-11-35"
+"proj256_eval_magnif_bsl_Oct07_19-46-29"
+"proj256_eval_magnif_cvr_0_01-1_50_Oct07_05-06-53"
+"proj256_eval_magnif_cvr_0_05-0_35_Oct07_05-06-55"
+"proj256_eval_magnif_cvr_0_01-0_35_Oct07_05-06-57"
+"proj256_eval_magnif_cvr_0_05-0_70_Oct07_05-11-35"
+"proj256_eval_magnif_cvr_0_05-0_70_Oct07_19-46-29"
+"proj256_eval_magnif_cvr_0_01-0_35_Oct07_19-46-40"
+"proj256_eval_magnif_cvr_0_05-0_35_Oct07_19-46-40"
+"proj256_eval_magnif_cvr_0_01-1_50_Oct07_19-46-40"
+"proj256_eval_magnif_cvr_0_05-0_35_Oct08_02-19-24"
+"proj256_eval_magnif_cvr_0_05-0_35_Oct08_02-19-26"
+"proj256_eval_magnif_cvr_0_05-0_35_Oct08_02-19-31"
+"proj256_eval_magnif_exp_cvr_0_05-1_00_slp_1_50_Oct07_19-21-47"
+"proj256_eval_magnif_exp_cvr_0_05-1_00_slp_0_75-3_00_Oct07_19-38-20"
+"proj256_eval_magnif_exp_cvr_0_05-1_00_slp_0_75-3_00_Oct07_19-22-11"
+"proj256_eval_magnif_exp_cvr_0_05-0_50_slp_1_50_Oct07_19-25-55"
+"proj256_eval_magnif_exp_cvr_0_05-0_50_slp_0_75-3_00_Oct07_19-22-28"
 
 #%% Baseline Distribution Fixed Seed
 expdirs = ["proj256_eval_magnif_bsl_Oct07_05-11-35",
@@ -222,62 +218,22 @@ expdirs = [
 "proj256_eval_magnif_salmap_T10_0_cvr_0_01-0_35_Oct08_07-17-52",
 ]
 
+#%% baseline experiments
+bslexpdirs = ["proj256_eval_magnif_bsl_Oct07_05-11-35",
+            "proj256_eval_magnif_bsl_Oct07_19-46-29",
+            "proj256_eval_magnif_bsl_Oct08_07-44-26",
+            "proj256_eval_magnif_bsl_Oct08_07-44-27",
+            "proj256_eval_magnif_bsl_Oct08_07-44-30",
+            "proj256_eval_magnif_bsl_Oct08_07-45-39",
+            "proj256_eval_magnif_bsl_Oct08_07-45-41",
+            "proj256_eval_magnif_bsl_Oct08_07-45-43",
+            "proj256_eval_magnif_bsl_Oct08_07-45-48",]
 
+train_acc_arr_bsl, test_acc_arr_bsl, simclr_acc_arr_bsl, eval_timestep, simclr_timestep, \
+    param_table_bsl = load_format_exps(bslexpdirs, cfgkeys=["cover_ratio", "crop"])
 
-
+for ei in range(param_table_bsl.shape[0]):
+    print("crop %s trainACC %.4f  testACC %.4f  simclrACC %.4f"%\
+          (param_table_bsl.crop[ei], train_acc_arr_bsl[ei,-2], test_acc_arr_bsl[ei,-2], simclr_acc_arr_bsl[ei,-2]))
 #%%
-quad_magnif_expdirs = ["proj256_eval_magnif_cvr_0_01-1_50_Oct07_05-06-53",
-                     "proj256_eval_magnif_cvr_0_01-1_50_Oct07_19-46-40",
-                     "proj256_eval_magnif_cvr_0_05-0_70_Oct07_05-11-35",
-                     "proj256_eval_magnif_cvr_0_05-0_70_Oct07_19-46-29",
-                     "proj256_eval_magnif_cvr_0_05-0_35_Oct07_05-06-55",
-                     "proj256_eval_magnif_cvr_0_05-0_35_Oct07_19-46-40",
-                     "proj256_eval_magnif_cvr_0_05-0_35_Oct08_02-19-24",
-                     "proj256_eval_magnif_cvr_0_05-0_35_Oct08_02-19-24-SPLIT",
-                     "proj256_eval_magnif_cvr_0_05-0_35_Oct08_02-19-26",
-                     "proj256_eval_magnif_cvr_0_05-0_35_Oct08_02-19-31",
-                     "proj256_eval_magnif_cvr_0_01-0_35_Oct07_19-46-40",
-                     "proj256_eval_magnif_cvr_0_01-0_35_Oct07_05-06-57",] 
 
-expdirs = quad_magnif_expdirs
-param_list = []
-train_acc_arr = np.ones((22, len(expdirs)+1,)) * np.nan
-test_acc_arr = np.ones((22, len(expdirs)+1,)) * np.nan
-simclr_acc_arr = np.ones((392, len(expdirs)+1,)) * np.nan
-for ei, expdir in enumerate(expdirs):
-    expfp = rootdir/expdir
-    fns = glob(str(expfp/"events.out.tfevents.*"))
-    assert len(fns) == 1
-    event_acc = EventAccumulator(str(expfp))
-    event_acc.Reload()
-    step2epc_map = {step: epc for _, step, epc in event_acc.Scalars('epoch')}
-    step2epc_map[-1] = -1
-    # E. g. get wall clock, number of steps and value for a scalar 'Accuracy'
-    _, eval_step_test, test_acc_val = zip(*event_acc.Scalars('eval/test_acc'))
-    _, eval_step_train, train_acc_val = zip(*event_acc.Scalars('eval/train_acc'))
-    _, train_step_nums, simclr_acc_val = zip(*event_acc.Scalars('acc/top1'))
-    epocs = np.array(eval_step_test)//390
-    if expdir == 'proj256_eval_magnif_cvr_0_05-0_35_Oct08_02-19-24':
-        test_acc_val = test_acc_val[::2]
-        train_acc_val = train_acc_val[::2]
-        eval_step_train = eval_step_train[::2]
-        eval_step_test = eval_step_test[::2]
-        train_step_nums = train_step_nums[::2]
-        simclr_acc_val = simclr_acc_val[::2]
-    # if expdir == 'proj256_eval_magnif_cvr_0_05-0_35_Oct08_02-19-31':
-    #     test_acc_val = test_acc_val[::3]
-    #     train_acc_val = train_acc_val[::3]
-    #     eval_step_train = eval_step_train[::3]
-    #     eval_step_test = eval_step_test[::3]
-    #     train_step_nums = train_step_nums[::3]
-    #     simclr_acc_val = simclr_acc_val[::3]
-    cfgargs = yaml.load(open(expfp / "config.yml", 'r'), Loader=yaml.Loader)
-    cover_ratio = cfgargs.cover_ratio
-    param_list.append(cover_ratio)
-    train_acc_arr[:len(train_acc_val), ei] = np.array(train_acc_val)
-    test_acc_arr[:len(test_acc_val), ei] = np.array(test_acc_val)
-    simclr_acc_arr[:len(simclr_acc_val), ei] = np.array(simclr_acc_val)
-    print("cover_ratio [%.2f, %.2f] trainACC %.4f  testACC %.4f  simclrACC %.4f"%(*cover_ratio, train_acc_arr[-2,ei], test_acc_arr[-2,ei], simclr_acc_arr[-3,ei]))
-
-#%%
-#%%
