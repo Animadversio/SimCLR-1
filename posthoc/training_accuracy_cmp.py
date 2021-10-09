@@ -1,12 +1,18 @@
 """Read in event file written by tensorboard and perform post hoc comparison. """
 import os
+from os.path import join
 from glob import glob
 from pathlib import Path
 import torch
 import numpy as np
+import matplotlib as mpl
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
+import matplotlib.pylab as plt
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 import yaml
 rootdir = Path(r"E:\Cluster_Backup\SimCLR-runs")
+figdir = r"E:\OneDrive - Harvard University\SVRHM2021\Figures"
 SIMCLR_LEN = 390
 EVAL_LEN = 22
 INVALIDTIME = -99999
@@ -51,7 +57,7 @@ def load_format_exps(expdirs, cfgkeys=["cover_ratio"]):
     for ei, expdir in enumerate(expdirs):
         expfp = rootdir/expdir
         fns = glob(str(expfp/"events.out.tfevents.*"))
-        assert len(fns) == 1
+        assert len(fns) == 1, ("%s folder has %d event files, split them" % (expfp, len(fns)))
         event_acc = EventAccumulator(str(expfp))
         event_acc.Reload()
         cfgargs = yaml.load(open(expfp / "config.yml", 'r'), Loader=yaml.Loader)
@@ -70,7 +76,13 @@ def load_format_exps(expdirs, cfgkeys=["cover_ratio"]):
         train_acc_col.extend(train_acc_val_thrs)
         test_acc_col.extend(test_acc_val_thrs)
         simclr_acc_col.extend(simclr_acc_val_thrs)
-        param_list.extend([{k:cfgargs.__getattribute__(k) for k in cfgkeys}] * thread_num)
+        try:
+            cfgdict = {k:cfgargs.__getattribute__(k) for k in cfgkeys}
+        except AttributeError:
+            print("Keys should be from this list:\n", list(cfgargs.__dict__.keys()))
+            print(cfgargs.__dict__)
+            raise AttributeError
+        param_list.extend([cfgdict] * thread_num)
         expnm_list.extend([expdir] * thread_num)
 
     eval_timestep = np.array([-1, *range(1,100,5), 100])
@@ -84,7 +96,7 @@ def load_format_exps(expdirs, cfgkeys=["cover_ratio"]):
     param_table.index = expnm_list
     return  train_acc_arr, test_acc_arr, simclr_acc_arr, \
             eval_timestep, simclr_timestep, param_table
-#%%
+#%% Comparison of Magnif models
 quad_magnif_expdirs = ["proj256_eval_magnif_cvr_0_01-1_50_Oct07_05-06-53",
                      "proj256_eval_magnif_cvr_0_01-1_50_Oct07_19-46-40",
                      "proj256_eval_magnif_cvr_0_05-0_70_Oct07_05-11-35",
@@ -103,6 +115,110 @@ train_acc_arr, test_acc_arr, simclr_acc_arr, eval_timestep, simclr_timestep, \
 #%%
 for ei in range(param_table.shape[0]):
     print("cover_ratio [%.2f, %.2f] trainACC %.4f  testACC %.4f  simclrACC %.4f"%(*param_table.cover_ratio[ei], train_acc_arr[ei,-2], test_acc_arr[ei,-2], simclr_acc_arr[ei,-2]))
+#%% Temperature
+Tcrop_expdirs = ["proj256_eval_sal_new_T0.01_Oct09_00-57-35",
+                "proj256_eval_sal_new_T0.1_Oct09_00-57-38",
+                "proj256_eval_sal_new_T0.3_Oct09_00-57-38",
+                "proj256_eval_sal_new_T0.7_Oct08_08-44-40",
+                "proj256_eval_sal_new_T1.0_Oct09_00-57-39",
+                "proj256_eval_sal_new_T1.5_Oct08_08-44-40",
+                "proj256_eval_sal_new_T2.5_Oct08_08-44-40",
+                "proj256_eval_sal_new_T3.0_Oct09_00-57-34",
+                "proj256_eval_sal_new_T4.5_Oct08_08-49-50",
+                "proj256_eval_sal_new_T10.0_Oct09_00-57-38",
+                "proj256_eval_sal_new_T30.0_Oct09_00-57-34",
+                "proj256_eval_sal_new_T100.0_Oct09_00-58-34",
+                "proj256_eval_sal_new_flat_Oct09_00-57-33",]
+
+train_acc_arr, test_acc_arr, simclr_acc_arr, eval_timestep, simclr_timestep, \
+    param_table = load_format_exps(Tcrop_expdirs, cfgkeys=["crop_temperature", "sal_control"])
+
+for ei in range(param_table.shape[0]):
+    print("crop_temperature %.1f %s trainACC %.4f  testACC %.4f  simclrACC %.4f"%
+        (param_table.crop_temperature[ei], "Control" if param_table.sal_control[ei] else "", train_acc_arr[ei,-2], test_acc_arr[ei,-2], simclr_acc_arr[ei,-2]))
+
+#%% Visualize temperature effect on training
+T_arr = param_table.crop_temperature
+epoc_id = -2
+figh = plt.figure(figsize=(4, 5))
+plt.plot(T_arr[:-1], train_acc_arr[:-1, epoc_id], label="Train Set", marker="o")
+plt.plot(T_arr[:-1], test_acc_arr[:-1, epoc_id], label="Test Set", marker="o")
+plt.hlines(train_acc_arr[-1, epoc_id], 0, 100, color="darkblue", linestyles=":",
+           label="Train (Uniform Sampling)")
+plt.hlines(test_acc_arr[-1, epoc_id], 0, 100, color="red", linestyles=":",
+           label="Test (Uniform Sampling)")
+plt.semilogx()
+plt.xlim([0, 100])
+plt.legend()
+plt.xlabel("Sampling Temperature")
+plt.ylabel("Linear Eval Accuracy")
+plt.title("Visual Repr Evaluation\nEpoch %d"%eval_timestep[epoc_id])
+plt.show()
+figh.savefig(join(figdir, "randcrop_evalAcc-temperature_curve.png"))
+figh.savefig(join(figdir, "randcrop_evalAcc-temperature_curve.pdf"))
+#%%
+step_id = -2
+figh2 = plt.figure(figsize=(4,5))
+plt.plot(T_arr[:-1], simclr_acc_arr[:-1, step_id,], label="Simclr Acc", marker="o")
+plt.hlines(simclr_acc_arr[-1, step_id], 0, 100,color="darkblue", linestyles=":",
+           label="Simclr Acc (Uniform Sampling)")
+plt.semilogx()
+plt.xlim([0, 100])
+plt.legend()
+plt.xlabel("Sampling Temperature")
+plt.ylabel("Unlabeled Set Simclr Accuracy")
+plt.title("Training Objective Accuracy\nStep %d Epoch 99"%simclr_timestep[step_id])
+plt.show()
+figh2.savefig(join(figdir, "randcrop_simclrAcc-temperature_curve.png"))
+figh2.savefig(join(figdir, "randcrop_simclrAcc-temperature_curve.pdf"))
+
+
+#%% Comparison of using foveation vs crop
+foveacrop_expdirs = [# "proj256_eval_fov_orig_crop_Oct06_03-29-24",#no cfg
+                    "proj256_eval_fov_orig_crop_Oct06_17-56-31",
+                    "proj256_eval_fov_sal_ctrl_Oct06_17-56-29",
+                    # "proj256_eval_fov_sal_exp_Oct06_03-30-35",
+                    "proj256_eval_fov_sal_exp_Oct06_17-56-30",
+                    "proj256_eval_fov_fvr0_01-0_5_slp006_Oct06_17-58-16",
+                    "proj256_eval_fov_fvr0_10-0_5_slp006_Oct06_17-58-17",
+                    # "proj256_eval_fov_nocrop_blur_Oct06_03-29-24",
+                    "proj256_eval_fov_nocrop_blur_Oct06_17-56-28",
+                    # "proj256_eval_fov_nocrop_fvr0_01-0_1_slp006_Oct06_03-29-24",
+                    # "proj256_eval_fov_nocrop_fvr0_10-0_5_slp006_Oct06_03-30-31",
+                    "proj256_eval_fov_nocrop_fvr0_01-0_1_slp006_Oct06_17-56-29",
+                    "proj256_eval_fov_nocrop_fvr0_10-0_5_slp006_Oct06_18-17-43",
+                    "proj256_eval_fov_nocrop_fvr0_01-0_5_slp006_Oct06_17-58-17",]
+
+train_acc_arr, test_acc_arr, simclr_acc_arr, eval_timestep, simclr_timestep, \
+    param_table = load_format_exps(foveacrop_expdirs, cfgkeys=["disable_crop", "blur", "orig_cropper", "sal_control"])
+#%
+for ei in range(param_table.shape[0]):
+    explabel = param_table.index[ei].split("_Oct")[0]
+    print("%s:\t%s %s %s %s trainACC %.4f  testACC %.4f  simclrACC %.4f"%
+        (explabel, "no crop" if param_table.disable_crop[ei] else "do crop",
+         "Blur" if param_table.blur[ei] else "",
+         "orig_cropper" if param_table.orig_cropper[ei] else "",
+         "Control" if param_table.sal_control[ei] else "",
+         train_acc_arr[ei,-2], test_acc_arr[ei,-2], simclr_acc_arr[ei,-2]))
+
+#%%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #%%
 expdir_col = ["proj256_eval_sal_new_T0.01_Oct06_19-02-51",
