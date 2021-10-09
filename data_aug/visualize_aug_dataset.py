@@ -13,7 +13,7 @@ def visualize_saliency_maps_w_imgs(train_dataset, plot_density=False, temperatur
     idx_col = [] if idxs is None else idxs
     ncols = 2 + plot_density
     figh, axs = plt.subplots(12, ncols, figsize=(ncols * 1.6, 12 * 1.6))
-    for i in range(12):
+    for i in range(min(len(idx_col), 12)):
         if idxs is None:
             idx = np.random.randint(1E5)
             idx_col.append(idx)

@@ -1,27 +1,15 @@
-from io import BytesIO
-import win32clipboard
-def send_to_clipboard(image):
-    """https://stackoverflow.com/questions/34322132/copy-image-to-clipboard"""
-    output = BytesIO()
-    image.convert('RGB').save(output, 'BMP')
-    data = output.getvalue()[14:]
-    output.close()
-
-    win32clipboard.OpenClipboard()
-    win32clipboard.EmptyClipboard()
-    win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
-    win32clipboard.CloseClipboard()
 
 from data_aug.foveation import randomFoveated, FoveateAt
 from scipy.misc import face
+import numpy as np
 import torch
 from torchvision import datasets
-import numpy as np
 from PIL import Image
 import matplotlib.pylab as plt
 from torchvision.utils import make_grid
 from torchvision.transforms import ToPILImage, ToTensor
 from torch.nn.functional import interpolate
+from .aug_utils import send_to_clipboard
 
 #%%
 facetsr = torch.tensor(face()/255.0).float().permute([2,0,1]).unsqueeze(0)

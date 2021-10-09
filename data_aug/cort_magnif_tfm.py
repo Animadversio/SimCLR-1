@@ -8,6 +8,9 @@ from torch.nn.functional import interpolate
 import numpy as np
 from PIL import Image
 import matplotlib.pylab as plt
+import matplotlib as mpl
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
 from skimage.transform import rescale
 from scipy.misc import face
 from scipy.stats import norm
@@ -49,6 +52,8 @@ def get_RandomMagnifTfm(grid_generator="radial_quad_isotrop", bdr=16, fov=20, K=
     return randomMagnif
 
 def img_cortical_magnif_tsr(imgtsr, pnt, grid_func, demo=True):
+    if imgtsr.ndim == 4:
+        imgtsr.squeeze_(0)
     _, H, W = imgtsr.shape
     XX_intp, YY_intp = grid_func(imgtsr, pnt)
     grid = torch.stack([(torch.tensor(XX_intp) / W * 2 - 1),  # normalize the value to -1, 1
@@ -72,6 +77,33 @@ def img_cortical_magnif_tsr(imgtsr, pnt, grid_func, demo=True):
         axs[2].invert_yaxis()
         plt.show()
     return img_cm
+
+
+def cortical_magnif_tsr_demo(imgtsr, pnt, grid_func, subN=2):
+    if imgtsr.ndim == 4:
+        imgtsr.squeeze_(0)
+    _, H, W = imgtsr.shape
+    XX_intp, YY_intp = grid_func(imgtsr, pnt)
+    grid = torch.stack([(torch.tensor(XX_intp) / W * 2 - 1),  # normalize the value to -1, 1
+                        (torch.tensor(YY_intp) / H * 2 - 1)],  # normalize the value to -1, 1
+                       dim=2).unsqueeze(0).float()
+    img_cm = F.grid_sample(imgtsr.unsqueeze(0), grid, mode='bilinear', padding_mode='zeros')
+    img_cm.squeeze_(0)
+    # % Visualize the Manified plot.
+    pY, pX = pnt
+    figh, axs = plt.subplots(3, 1, figsize=(6, 12))
+    axs[0].imshow(img_cm.permute([1,2,0]))
+    axs[0].axis("off")
+    axs[1].imshow(imgtsr.permute([1,2,0]))
+    axs[1].axis("off")
+    axs[1].scatter([pX], [pY], c='r', s=16, alpha=0.5)
+    axs[2].scatter(XX_intp[::subN, ::subN].flatten(),
+                   YY_intp[::subN, ::subN].flatten(), c="r", s=0.25, alpha=0.2)
+    axs[2].set_xlim([0, W])
+    axs[2].set_ylim([0, H])
+    axs[2].invert_yaxis()
+    plt.show()
+    return figh, img_cm, imgtsr
 
 
 def linear_separable_gridfun(imgtsr, pnt, ):
