@@ -146,10 +146,13 @@ def main():
             raise ValueError
     else:
         train_dataset.magnifier = None
-    
+
     if args.randomize_seed:
         seed = torch.random.seed()
         args.seed = seed
+        print("Use randomized seed to test robustness, seed=%d" % seed)
+    else:
+        print("Use fixed manual seed, seed=0")
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True,
