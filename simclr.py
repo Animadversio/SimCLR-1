@@ -24,9 +24,9 @@ class SimCLR(object):
         self.optimizer = kwargs['optimizer']
         self.scheduler = kwargs['scheduler']
         current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-        log_dir_tmp = os.path.join(self.args.log_root, self.args.run_label + "_" + current_time)
+        log_dir_tmp = os.path.join(self.args.log_root, self.args.run_label + "_" + current_time + "-%03d"%np.random.randint(1000))
         if os.path.isdir(log_dir_tmp):
-            log_dir_tmp += "-%03"%np.randint(1000)
+            log_dir_tmp += "-%03d"%np.random.randint(1000)
         self.writer = SummaryWriter(log_dir=log_dir_tmp, )
         # self.writer.log_dir = self.args.log_root + self.writer.log_dir
         logging.basicConfig(filename=os.path.join(self.writer.log_dir, 'training.log'), level=logging.DEBUG)
