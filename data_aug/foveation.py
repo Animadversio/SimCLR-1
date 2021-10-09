@@ -55,6 +55,8 @@ def FoveateAt(img_tsr, pnt:tuple, kerW_coef=0.04, e_o=1, \
     N_e: Number of ring belts in total. if None, it will calculate the N_e s.t. the whole image is covered by ring belts.
     bdr: width (in pixel) of border region that forbid sampling (bias foveation point to be in the center of img)
   """
+  if img_tsr.ndim == 3:
+    img_tsr = img_tsr.unsqueeze(0)
   H, W = img_tsr.shape[2], img_tsr.shape[3]  # if this is fixed then these two steps could be saved
   XX, YY = torch.meshgrid(torch.arange(H, dtype=torch.float32), torch.arange(W, dtype=torch.float32))
   deg_per_pix = 20 / math.sqrt(H**2 + W**2)
@@ -77,6 +79,8 @@ def FoveateAt(img_tsr, pnt:tuple, kerW_coef=0.04, e_o=1, \
     mean_dev = math.exp(math.log(e_o) + (N + 1) * spacing)
     kerW = kerW_coef * mean_dev / deg_per_pix
     kerSz = int(kerW * 3)
+    if kerSz % 2 == 0:  # gaussian_blur2d needs a odd number sized kernel.
+      kerSz += 1
     img_gsft = gaussian_blur2d(img_tsr, kernel_size=(kerSz, kerSz), sigma=(kerW, kerW), border_type='reflect')
     finalimg = finalimg + rbf_basis[None,None,:,:] * img_gsft # tf.expand_dims(rbf_basis,-1)
   
@@ -186,3 +190,59 @@ def vis_belts(ax, img, pnt, kerW_coef=0.04, e_o=1, N_e=None, spacing=0.5):
     ax.add_patch(circle2)
     ax.add_patch(circle3)
     ax.add_patch(circle32)
+
+#%%
+def FoveateAt_demo(img_tsr, pnt: tuple, kerW_coef=0.04, e_o=1,
+              N_e=None, spacing=0.5, ):
+  """Apply foveation transform at (x,y) coordinate `pnt` to `img`, demo version
+
+  Parameters:
+    kerW_coef: how gaussian filtering kernel std scale as a function of eccentricity
+    e_o: eccentricity of the initial ring belt
+    spacing: log scale spacing between eccentricity of ring belts.
+    N_e: Number of ring belts in total. if None, it will calculate the N_e s.t. the whole image is covered by ring belts.
+    bdr: width (in pixel) of border region that forbid sampling (bias foveation point to be in the center of img)
+  """
+  if img_tsr.ndim == 3:
+    img_tsr = img_tsr.unsqueeze(0)
+  H, W = img_tsr.shape[2], img_tsr.shape[3]  # if this is fixed then these two steps could be saved
+  XX, YY = torch.meshgrid(torch.arange(H, dtype=torch.float32), torch.arange(W, dtype=torch.float32))
+  deg_per_pix = 20 / math.sqrt(H ** 2 + W ** 2)
+  # pixel coordinate of fixation point.
+  xid, yid = pnt
+  D2fov = torch.sqrt((XX - xid) ** 2 + (YY - yid) ** 2)
+  D2fov_deg = D2fov * deg_per_pix
+  maxecc = math.sqrt(max(xid, W - xid) ** 2 + max(yid,
+                        H - yid) ** 2) * deg_per_pix
+  if N_e is None:
+    N_e = np.ceil((np.log(maxecc) - np.log(e_o)) / spacing).astype("int32")
+    # N_e will be a numpy.int32 number
+  rbf_basis = fov_rbf(D2fov_deg, spacing, e_o)
+  finalimg = rbf_basis[None, None, :, :] * img_tsr  # tf.expand_dims(rbf_basis,-1)
+  mask_col = [rbf_basis]
+  blurimg_col = [img_tsr[0]]
+  multiply_col = [(rbf_basis[None, None, :, :] * img_tsr).squeeze(0)]
+  for N in range(N_e):
+    rbf_basis = rbf(D2fov_deg, N, spacing, e_o=e_o)
+    mean_dev = math.exp(math.log(e_o) + (N + 1) * spacing)
+    kerW = kerW_coef * mean_dev / deg_per_pix
+    kerSz = int(kerW * 3)
+    if kerSz % 2 == 0:  # gaussian_blur2d needs a odd number sized kernel.
+      kerSz += 1
+    img_gsft = gaussian_blur2d(img_tsr, kernel_size=(kerSz, kerSz),
+                               sigma=(kerW, kerW), border_type='reflect')
+    finalimg = finalimg + rbf_basis[None, None, :, :] * img_gsft  # tf.expand_dims(rbf_basis,-1)
+    mask_col.append(rbf_basis[:, :])
+    blurimg_col.append(img_gsft[0])
+    multiply_col.append((rbf_basis[None, None, :, :] * img_gsft).squeeze(0))
+
+  # figh, ax = plt.subplots(figsize=[10, 10])
+  # plt.imshow(finalimg.squeeze(0).permute(1, 2, 0))
+  # plt.axis("off")
+  # plt.show()
+  # figh, ax = plt.subplots(figsize=[10, 10])
+  # plt.imshow(finalimg.squeeze(0).permute(1, 2, 0))
+  # plt.axis("off")
+  # vis_belts(ax, img_tsr.squeeze(0).permute(1, 2, 0), pnt, kerW_coef, e_o, N_e, spacing)
+  # figh.show()
+  return finalimg, mask_col, blurimg_col, multiply_col
