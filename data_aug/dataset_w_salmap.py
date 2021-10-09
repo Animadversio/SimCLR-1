@@ -85,8 +85,8 @@ class Contrastive_STL10_w_salmap(Dataset):
         if self.salmap_control:
             salmap_tsr = torch.ones(1, 1, 96, 96).float() # flat saliency map, size hard coded. 
         else:
-            salmap = self.salmaps[idx, :, :, :].astype('float') # numpy.ndarray
-            salmap_tsr = torch.tensor(salmap).unsqueeze(0).float() #F.interpolate(, [96, 96])
+            salmap = self.salmaps[idx, :, :, :].astype('float')  # numpy.ndarray
+            salmap_tsr = torch.tensor(salmap).unsqueeze(0).float()  #F.interpolate(, [96, 96])
 
         if self.disable_crop:
             sal_crops = [img for i in range(self.n_views)]

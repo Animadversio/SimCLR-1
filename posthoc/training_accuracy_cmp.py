@@ -41,7 +41,7 @@ def split_record(timestep, value, standardL=EVAL_LEN):
                     for  val_arr  in  val_threads]
 
 import pandas as pd
-keys = ["cover_ratio"]
+# keys = ["cover_ratio"]
 def load_format_exps(expdirs, cfgkeys=["cover_ratio"]):
     train_acc_col = [] # 22
     test_acc_col = []  # 22
@@ -237,3 +237,11 @@ for ei in range(param_table_bsl.shape[0]):
           (param_table_bsl.crop[ei], train_acc_arr_bsl[ei,-2], test_acc_arr_bsl[ei,-2], simclr_acc_arr_bsl[ei,-2]))
 #%%
 
+runnms = os.listdir(rootdir)
+exp_magnif_expdirs = [*filter(lambda nm:"proj256_eval_magnif_exp" in nm, runnms)]
+train_acc_arr_bsl, test_acc_arr_bsl, simclr_acc_arr_bsl, eval_timestep, simclr_timestep, \
+    param_table_bsl = load_format_exps(exp_magnif_expdirs, cfgkeys=["cover_ratio", "slope_S"])
+
+for ei in range(param_table_bsl.shape[0]):
+    print("crop %s trainACC %.4f  testACC %.4f  simclrACC %.4f"%\
+          (param_table_bsl.crop[ei], train_acc_arr_bsl[ei,-2], test_acc_arr_bsl[ei,-2], simclr_acc_arr_bsl[ei,-2]))
