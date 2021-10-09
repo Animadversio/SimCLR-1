@@ -36,6 +36,8 @@ parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                     dest='weight_decay')
 parser.add_argument('--seed', default=None, type=int,
                     help='seed for initializing training. ')
+parser.add_argument('--randomize_seed', action='store_true', default=False,
+                    help='Set randomized seed for the experiment')
 parser.add_argument('--disable-cuda', action='store_true',
                     help='Disable CUDA')
 parser.add_argument('--fp16-precision', action='store_true',
@@ -121,6 +123,13 @@ def main():
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True,
         num_workers=args.workers, pin_memory=True, drop_last=True)
+
+    if args.randomize_seed:
+        seed = torch.random.seed()
+        args.seed = seed
+        print("Use randomized seed to test robustness, seed=%d" % seed)
+    else:
+        print("Use fixed manual seed, seed=0")
 
     model = ResNetSimCLR(base_model=args.arch, out_dim=args.out_dim)
 
