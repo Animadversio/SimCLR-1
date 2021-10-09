@@ -11,9 +11,15 @@ def visualize_saliency_maps_w_imgs(train_dataset, plot_density=False, temperatur
     idxs=(96659, 54019, 88327, 81148, 98469, 77493, 131, 58202, 66666, 65017, 1973, 29975),
     ):
     idx_col = [] if idxs is None else idxs
-    ncols = 2 + plot_density
-    figh, axs = plt.subplots(12, ncols, figsize=(ncols * 1.6, 12 * 1.6))
-    for i in range(min(len(idx_col), 12)):
+    if type(temperature) in [tuple, list]:
+        nTemp = len(temperature)
+    else:
+        nTemp = 1
+        temperature = [temperature]
+    ncols = 2 + plot_density * nTemp
+    nrows = min(len(idx_col), 12)
+    figh, axs = plt.subplots(nrows, ncols, figsize=(ncols * 1.6, nrows * 1.6), squeeze=False)
+    for i in range(nrows):
         if idxs is None:
             idx = np.random.randint(1E5)
             idx_col.append(idx)
@@ -27,14 +33,15 @@ def visualize_saliency_maps_w_imgs(train_dataset, plot_density=False, temperatur
         axs[i, 1].imshow(salmap.squeeze())
         axs[i, 1].axis("off")
         if plot_density:
-            density = np.exp((salmap - salmap.max()) / temperature)
-            if bdr > 0:  # set the border density to be 0,
-                density_mat = np.zeros_like(density[0, :, :])
-                density_mat[bdr: -bdr, bdr: -bdr] = density[0, bdr:-bdr, bdr:-bdr]
-            else:
-                density_mat = density[0]
-            axs[i, 2].imshow(density_mat)
-            axs[i, 2].axis("off")
+            for k, Temp in enumerate(temperature):
+                density = np.exp((salmap - salmap.max()) / Temp)
+                if bdr > 0:  # set the border density to be 0,
+                    density_mat = np.zeros_like(density[0, :, :])
+                    density_mat[bdr: -bdr, bdr: -bdr] = density[0, bdr:-bdr, bdr:-bdr]
+                else:
+                    density_mat = density[0]
+                axs[i, 2 + k].imshow(density_mat)
+                axs[i, 2 + k].axis("off")
 
     figh.show()
     return figh, idx_col
