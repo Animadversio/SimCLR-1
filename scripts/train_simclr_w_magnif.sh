@@ -54,7 +54,7 @@ param_list=\
 --run_label proj256_eval_magnif_salmap_T6_0_cvr_0_01-0_35 --magnif --sal_sample --sample_temperature 6.0 --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16
 --run_label proj256_eval_magnif_salmap_T30_0_cvr_0_01-0_35 --magnif --sal_sample --sample_temperature 30.0 --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16
 --run_label proj256_eval_magnif_salmap_T100_0_cvr_0_01-0_35 --magnif --sal_sample --sample_temperature 100.0 --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16
---run_label proj256_eval_magnif_salmap_T0_01_cvr_0_01-0_35 --magnif --sal_sample --sample_temperature 0.03 --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16
+--run_label proj256_eval_magnif_salmap_T0_03_cvr_0_01-0_35 --magnif --sal_sample --sample_temperature 0.03 --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16
 '
 
 export extra_param="$(echo "$param_list" | head -n $LSB_JOBINDEX | tail -1)"
