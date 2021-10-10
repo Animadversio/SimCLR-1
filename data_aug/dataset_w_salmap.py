@@ -136,7 +136,7 @@ class Contrastive_STL10_w_CortMagnif(Dataset):
 
     def __init__(self, dataset_dir=r"/scratch1/fs1/crponce/Datasets", \
         transform=None, split="unlabeled", n_views=2,
-        crop=False, magnif=False, sal_sample=False, ):
+        crop=False, magnif=False, sal_sample=False, sal_control=False):
         """
         Args:
             dataset_dir (string): Directory with all the images. E:\Datasets
@@ -154,6 +154,7 @@ class Contrastive_STL10_w_CortMagnif(Dataset):
         self.magnif = magnif
         self.magnifier = None 
         self.sal_sample = sal_sample  # used in magnifier, not used here ! can be omited
+        self.sal_control = sal_control
 
         if transform is not None:
             self.transform = transform
@@ -168,6 +169,9 @@ class Contrastive_STL10_w_CortMagnif(Dataset):
         img, label = self.dataset.__getitem__(idx) # img is PIL.Image, label is xxxx
         salmap = self.salmaps[idx, :, :, :].astype('float')  # numpy.ndarray
         salmap_tsr = torch.tensor(salmap).unsqueeze(0).float()  #F.interpolate(, [96, 96])
+        if self.sal_control: 
+            print("Use flat salincy map as control")
+            salmap_tsr = torch.ones([1,1,96,96]).float()
 
         views = [img for i in range(self.n_views)]
 

@@ -70,6 +70,8 @@ parser.add_argument('--magnif', action='store_true', default=False,
     help='Do random magnif augmentation')
 parser.add_argument('--sal_sample', action='store_true', default=False,
     help='Use saliency map to guide sampling or not')
+parser.add_argument('--sal_control', action='store_true', default=False,
+    help='Flat density as control')
 parser.add_argument('--sample_temperature', default=1.5, \
     type=float, help='temperature of sampling ')
 
@@ -124,7 +126,8 @@ def main():
     from data_aug.visualize_aug_dataset import visualize_augmented_dataset
 
     train_dataset = Contrastive_STL10_w_CortMagnif(dataset_dir=args.data,
-            split="unlabeled", crop=args.crop, magnif=args.magnif, sal_sample=args.sal_sample, )
+            split="unlabeled", crop=args.crop, magnif=args.magnif, 
+            sal_sample=args.sal_sample, sal_control=args.sal_control)
     train_dataset.transform = train_dataset.get_simclr_pre_magnif_transform(96,
                         blur=args.blur, crop=args.crop, )
     # train_dataset.transform = train_dataset.get_simclr_magnif_transform(96,
