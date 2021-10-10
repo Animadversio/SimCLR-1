@@ -5,14 +5,19 @@ from glob import glob
 from pathlib import Path
 import torch
 import numpy as np
+import pandas as pd
 import matplotlib as mpl
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
+pd.set_option('display.width', 200)
+pd.set_option("max_colwidth", 60)
+pd.set_option('display.max_columns', None)
 import matplotlib.pylab as plt
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 import yaml
 rootdir = Path(r"E:\Cluster_Backup\SimCLR-runs")
 figdir = r"E:\OneDrive - Harvard University\SVRHM2021\Figures"
+outdir = 'E:\\OneDrive - Harvard University\\SVRHM2021\\Tables'
 SIMCLR_LEN = 390
 EVAL_LEN = 22
 INVALIDTIME = -99999
@@ -48,7 +53,8 @@ def split_record(timestep, value, standardL=EVAL_LEN):
 
 import pandas as pd
 # keys = ["cover_ratio"]
-def load_format_exps(expdirs, cfgkeys=["cover_ratio"]):
+def load_format_exps(expdirs, cfgkeys=["cover_ratio"],
+                     eval_idx=-2, train_idx=-2, ema_alpha=0.6):
     train_acc_col = [] # 22
     test_acc_col = []  # 22
     simclr_acc_col = [] # 390
@@ -92,10 +98,194 @@ def load_format_exps(expdirs, cfgkeys=["cover_ratio"]):
     train_acc_arr = np.array(train_acc_col)
     test_acc_arr = np.array(test_acc_col)
     simclr_acc_arr = np.array(simclr_acc_col)
+    simclr_acc_arr_ema = np.array([ema_vectorized(simclr_vec, alpha=ema_alpha)
+                                   for simclr_vec in simclr_acc_col])
     param_table = pd.DataFrame(param_list)
-    param_table.index = expnm_list
+    param_table["expdir"] = expnm_list
+    param_table["train_acc"] = train_acc_arr[:, eval_idx]
+    param_table["test_acc"] = test_acc_arr[:, eval_idx]
+    param_table["simclr_acc"] = simclr_acc_arr[:, train_idx]
+    param_table["simclr_acc_ema"] = simclr_acc_arr_ema[:, train_idx]
+    print("Report linear evaluation acc at %d epc[%d]\n Report simclr acc at %d step[%d]"%
+          (eval_timestep[eval_idx], eval_idx, simclr_timestep[train_idx], train_idx))
+    print(param_table.drop("expdir", axis=1))
+
     return  train_acc_arr, test_acc_arr, simclr_acc_arr, \
             eval_timestep, simclr_timestep, param_table
+
+from PIL import Image
+def vis_exist_samples(expdir):
+    img = plt.imread(rootdir/expdir/"sample_data_augs.png")
+    Image.fromarray((255*img).astype(np.uint8)).show()
+
+
+def ema_vectorized(data, alpha=0.6):
+    """https://newbedev.com/numpy-version-of-exponential-weighted-moving-average-equivalent-to-pandas-ewm-mean"""
+    if type(data) is list:
+        data = np.array(data)
+    # alpha = 2 /(window + 1.0)
+    alpha_rev = 1-alpha
+
+    scale = 1/alpha_rev
+    n = data.shape[0]
+
+    r = np.arange(n)
+    scale_arr = scale**r
+    offset = data[0]*alpha_rev**(r+1)
+    pw0 = alpha*alpha_rev**(n-1)
+
+    mult = data*pw0*scale_arr
+    cumsums = mult.cumsum()
+    out = offset + cumsums*scale_arr[::-1]
+    return out
+
+def bootstrap_diff_mean(group1,group2,q=[0.025,0.975],trials=1000):
+    N1, N2 = len(group1), len(group2)
+    samps1 = np.array([np.random.choice(group1, N1, replace=True) for _ in range(trials)])
+    samps2 = np.array([np.random.choice(group2, N1, replace=True) for _ in range(trials)])
+    dom_arr = samps1.mean(axis=1) - samps2.mean(axis=1)
+    qtls = np.quantile(dom_arr, q)
+    return dom_arr.mean(), qtls
+
+#%%
+runnms = os.listdir(rootdir)
+
+#%% Experiment 1: Evaluate the Pure foveation transform
+runnms = os.listdir(rootdir)
+exp_fov_expdirs = [*filter(lambda nm:"proj256_eval_fov_" in nm and "Oct06_03-" not in nm, runnms)]
+train_acc_arr, test_acc_arr, simclr_acc_arr, eval_timestep, simclr_timestep, \
+    param_table = load_format_exps(exp_fov_expdirs, cfgkeys=["foveation", "disable_crop", "sal_control", "fov_area_rng", "kerW_coef", "blur", "pad_img", "crop_temperature"])
+param_table.to_csv(join(outdir, "Exp1_pure_fov_vs_crop_result.csv"))
+
+
+#%% Experiment 2: Evaluate Magnification transfomr (Quad)
+runnms = os.listdir(rootdir)
+exp_magnif_expdirs = [*filter(lambda nm:"proj256_eval_magnif_cvr_" in nm or "proj256_eval_magnif_bsl_" in nm, runnms)]
+train_acc_arr, test_acc_arr, simclr_acc_arr, eval_timestep, simclr_timestep, \
+    param_table = load_format_exps(exp_magnif_expdirs, cfgkeys=["magnif", "crop", "blur", "cover_ratio", "fov_size", "K", "seed"])
+param_table.to_csv(join(outdir, "Exp2_pure_magnif_vs_crop_result.csv"))
+
+#%% compare baseline with magnification
+magnif_msk = param_table.expdir.str.contains("proj256_eval_magnif_cvr_0_05-0_35_Oct")
+bsl_msk = param_table.expdir.str.contains("proj256_eval_magnif_bsl_Oct")
+for gname, msk in zip(["Magnificat", "Baseline"], [magnif_msk, bsl_msk]):
+    print(f"{gname}\ttrain_acc {100*param_table.train_acc[msk].mean():.2f}+-{100*param_table.train_acc[msk].std():.2f}\t"
+          f"test_acc {100*param_table.test_acc[msk].mean():.2f}+-{100*param_table.test_acc[msk].std():.2f}\t"
+          f"simclr_acc {param_table.simclr_acc[msk].mean():.2f}+-{param_table.simclr_acc[msk].std():.2f}")
+
+bootstrap_diff_mean(100*param_table.test_acc[magnif_msk],100*param_table.test_acc[bsl_msk])
+#%%
+plt.figure(figsize=[10,10])
+plt.plot(test_acc_arr.T,)
+plt.legend(param_table.expdir.to_list())
+plt.show()
+
+
+
+
+
+
+
+#%% Experiment 3: Temperature effect on Random Crops
+exp_Tcrop_expdirs = [*filter(lambda nm:("proj256_eval_sal_new_T" in nm)
+       and ("Oct08" in nm or "Oct09" in nm), runnms)]
+train_acc_arr, test_acc_arr, simclr_acc_arr, eval_timestep, simclr_timestep, \
+    param_table = load_format_exps(exp_Tcrop_expdirs, cfgkeys=["crop_temperature", "sal_control", ])#"blur"
+param_table = param_table.sort_values("crop_temperature")
+param_table.reset_index(inplace=True)
+param_table.to_csv(join(outdir, "Exp3_salmap_randcrop_sampling.csv"))
+
+exp_Tcrop_bsl_expdirs = [*filter(lambda nm:"proj256_eval_sal_new_flat" in nm and ("Oct08" in nm or "Oct09" in nm), runnms)]
+_, _, _, _, _, \
+    param_table_bsl = load_format_exps(exp_Tcrop_bsl_expdirs, cfgkeys=["crop_temperature", "sal_control", ])
+param_table_bsl.to_csv(join(outdir, "Exp3_salmap_randcrop_sampling_baseline.csv"))
+
+#%%
+figh = plt.figure(figsize=[4,5])
+plt.plot(param_table.crop_temperature, param_table.train_acc, marker="o", label="train_acc")
+plt.plot(param_table.crop_temperature, param_table.test_acc, marker="o", label="test_acc")
+plt.semilogx()
+plt.hlines(param_table_bsl.train_acc.mean(), 0, 100, color="darkblue", linestyles=":", label="Train (Uniform Sampling)")
+plt.hlines(param_table_bsl.test_acc.mean(), 0, 100, color="red", linestyles=":", label="Test (Uniform Sampling)")
+plt.xlabel("Sampling Temperature")
+plt.ylabel("Linear Eval Accuracy")
+plt.title("Visual Repr Evaluation\nEpoch %d"%eval_timestep[-2])
+plt.legend()
+plt.show()
+figh.savefig(join(figdir, "RandCrop_evalAcc-temperature_curve.png"))
+figh.savefig(join(figdir, "RandCrop_evalAcc-temperature_curve.pdf"))
+# sort_table = param_table.sort_values("sample_temperature")
+
+#%%
+figh = plt.figure(figsize=[4,5])
+plt.plot(param_table.crop_temperature, param_table.simclr_acc_ema, marker="o")
+plt.semilogx()
+plt.hlines(param_table_bsl.simclr_acc_ema.mean(), 0, 100, color="darkblue", linestyles=":", label="Test (Uniform Sampling)")
+plt.xlabel("Sampling Temperature")
+plt.ylabel("Simclr Train Accuracy")
+plt.title("Training Objective Accuracy\nStep %d Epoch 99"%simclr_timestep[-2])
+plt.show()
+figh.savefig(join(figdir, "RandCrop_simclrAcc-temperature_curve.png"))
+figh.savefig(join(figdir, "RandCrop_simclrAcc-temperature_curve.pdf"))
+
+
+
+
+
+
+
+#%% Experiment 4: Magnification with saliency maps: Effect of temperature
+runnms = os.listdir(rootdir)
+exp_magnif_T_expdirs = [*filter(lambda nm:"proj256_eval_magnif_salmap" in nm and "flat" not in nm, runnms)]
+train_acc_arr, test_acc_arr, simclr_acc_arr, eval_timestep, simclr_timestep, \
+    param_table = load_format_exps(exp_magnif_T_expdirs, cfgkeys=["cover_ratio", "sample_temperature", "blur"])
+param_table = param_table.sort_values("sample_temperature")
+param_table.reset_index(inplace=True)
+param_table.to_csv(join(outdir, "Exp4_salmap_magnif_sampling.csv"))
+#%%
+exp_magnif_bsl_expdirs = [*filter(lambda nm:"proj256_eval_magnif_salmap_flat_cvr_0_01-0_35" in nm, runnms)]
+_, _, _, _, _, param_table_bsl = load_format_exps(exp_magnif_bsl_expdirs, cfgkeys=["cover_ratio", "sal_sample", "blur"])
+param_table_bsl.to_csv(join(outdir, "Exp4_salmap_magnif_sampling_baseline.csv"))
+
+#%%
+figh = plt.figure(figsize=[4,5])
+plt.plot(param_table.sample_temperature, param_table.train_acc, marker="o", label="train_acc")
+plt.plot(param_table.sample_temperature, param_table.test_acc, marker="o", label="test_acc")
+plt.semilogx()
+plt.hlines(param_table_bsl.train_acc.mean(), 0, 100, color="darkblue", linestyles=":", label="Train (Uniform Sampling)")
+plt.hlines(param_table_bsl.test_acc.mean(), 0, 100, color="red", linestyles=":", label="Test (Uniform Sampling)")
+plt.xlabel("Sampling Temperature")
+plt.ylabel("Linear Eval Accuracy")
+plt.title("Visual Repr Evaluation\nEpoch %d"%eval_timestep[-2])
+plt.legend()
+plt.show()
+figh.savefig(join(figdir, "Magnif_evalAcc-temperature_curve.png"))
+figh.savefig(join(figdir, "Magnif_evalAcc-temperature_curve.pdf"))
+# sort_table = param_table.sort_values("sample_temperature")
+
+#%%
+figh = plt.figure(figsize=[4,5])
+plt.plot(param_table.sample_temperature, param_table.simclr_acc_ema, marker="o")
+plt.semilogx()
+plt.hlines(param_table_bsl.simclr_acc_ema.mean(), 0, 100, color="darkblue", linestyles=":", label="Test (Uniform Sampling)")
+plt.xlabel("Sampling Temperature")
+plt.ylabel("Simclr Train Accuracy")
+plt.title("Training Objective Accuracy\nStep %d Epoch 99"%simclr_timestep[-2])
+plt.show()
+figh.savefig(join(figdir, "Magnif_simclrAcc-temperature_curve.png"))
+figh.savefig(join(figdir, "Magnif_simclrAcc-temperature_curve.pdf"))
+
+
+
+
+#%%
+
+
+#%%
+
+
+
+
 #%% Comparison of Magnif models
 quad_magnif_expdirs = ["proj256_eval_magnif_cvr_0_01-1_50_Oct07_05-06-53",
                      "proj256_eval_magnif_cvr_0_01-1_50_Oct07_19-46-40",
@@ -202,23 +392,33 @@ for ei in range(param_table.shape[0]):
          train_acc_arr[ei,-2], test_acc_arr[ei,-2], simclr_acc_arr[ei,-2]))
 
 #%%
+runnms = os.listdir(rootdir)
+exp_magnif_expdirs = [*filter(lambda nm:"proj256_eval_magnif_exp" in nm, runnms)]
+train_acc_arr, test_acc_arr, simclr_acc_arr, eval_timestep, simclr_timestep, \
+    param_table = load_format_exps(exp_magnif_expdirs, cfgkeys=["cover_ratio", "slope_C", "crop", "blur"])
+#%%
+for ei in range(param_table.shape[0]):
+    print("cover_ratio %s slope_C %s trainACC %.4f  testACC %.4f  simclrACC %.4f"%\
+          (param_table.cover_ratio[ei], param_table.slope_C[ei], train_acc_arr[ei,-2], test_acc_arr[ei,-2], simclr_acc_arr[ei,-2]))
+#%%
+exp_line = param_table.iloc[1]
+vis_exist_samples(exp_line.expdir)
+print(exp_line)
 
 
 
+#%%  Effect of  Randomized seeds
+runnms = os.listdir(rootdir)
+exp_magnif_expdirs = [*filter(lambda nm:"RND" in nm, runnms)]
+train_acc_arr, test_acc_arr, simclr_acc_arr, eval_timestep, simclr_timestep, \
+    param_table = load_format_exps(exp_magnif_expdirs, cfgkeys=["cover_ratio", "crop", "gridfunc_form"])
 
+#%% Magnification parameters
 
-
-
-
-
-
-
-
-
-
-
-
-
+#%% Quad Magnification experiments
+exp_magnif_expdirs = [*filter(lambda nm:"proj256_eval_magnif_cvr_" in nm, runnms)]
+train_acc_arr, test_acc_arr, simclr_acc_arr, eval_timestep, simclr_timestep, \
+    param_table = load_format_exps(exp_magnif_expdirs, cfgkeys=["cover_ratio", "crop", "fov_size", "K", "seed"])
 
 #%%
 expdir_col = ["proj256_eval_sal_new_T0.01_Oct06_19-02-51",
@@ -352,12 +552,3 @@ for ei in range(param_table_bsl.shape[0]):
     print("crop %s trainACC %.4f  testACC %.4f  simclrACC %.4f"%\
           (param_table_bsl.crop[ei], train_acc_arr_bsl[ei,-2], test_acc_arr_bsl[ei,-2], simclr_acc_arr_bsl[ei,-2]))
 #%%
-
-runnms = os.listdir(rootdir)
-exp_magnif_expdirs = [*filter(lambda nm:"proj256_eval_magnif_exp" in nm, runnms)]
-train_acc_arr_bsl, test_acc_arr_bsl, simclr_acc_arr_bsl, eval_timestep, simclr_timestep, \
-    param_table_bsl = load_format_exps(exp_magnif_expdirs, cfgkeys=["cover_ratio", "slope_S"])
-
-for ei in range(param_table_bsl.shape[0]):
-    print("crop %s trainACC %.4f  testACC %.4f  simclrACC %.4f"%\
-          (param_table_bsl.crop[ei], train_acc_arr_bsl[ei,-2], test_acc_arr_bsl[ei,-2], simclr_acc_arr_bsl[ei,-2]))
