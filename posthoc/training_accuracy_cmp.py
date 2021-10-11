@@ -1,6 +1,7 @@
 """Read in event file written by tensorboard and perform post hoc comparison. """
 import os
 from os.path import join
+import yaml
 from glob import glob
 from pathlib import Path
 import torch
@@ -14,7 +15,6 @@ pd.set_option("max_colwidth", 60)
 pd.set_option('display.max_columns', None)
 import matplotlib.pylab as plt
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
-import yaml
 rootdir = Path(r"E:\Cluster_Backup\SimCLR-runs")
 figdir = r"E:\OneDrive - Harvard University\SVRHM2021\Figures"
 outdir = 'E:\\OneDrive - Harvard University\\SVRHM2021\\Tables'
@@ -51,7 +51,6 @@ def split_record(timestep, value, standardL=EVAL_LEN):
                     np.nan * np.ones(standardL-len(val_arr), dtype=val_arr.dtype)))
                     for  val_arr  in  val_threads]
 
-import pandas as pd
 # keys = ["cover_ratio"]
 def load_format_exps(expdirs, cfgkeys=["cover_ratio"],
                      eval_idx=-2, train_idx=-2, ema_alpha=0.6):
@@ -156,8 +155,34 @@ exp_fov_expdirs = [*filter(lambda nm:"proj256_eval_fov_" in nm and "Oct06_03-" n
 train_acc_arr, test_acc_arr, simclr_acc_arr, eval_timestep, simclr_timestep, \
     param_table = load_format_exps(exp_fov_expdirs, cfgkeys=["foveation", "disable_crop", "sal_control", "fov_area_rng", "kerW_coef", "blur", "pad_img", "crop_temperature"])
 param_table.to_csv(join(outdir, "Exp1_pure_fov_vs_crop_result.csv"))
-
-
+#%%
+plt.figure(figsize=[6,5])
+plt.plot(simclr_timestep/390, simclr_acc_arr.T, alpha=0.6)
+plt.show()
+#%%
+explabels = param_table.expdir.to_list()
+explabels = [lab.split("_Oct")[0].split("proj256_eval_fov_")[1] for lab in explabels]
+#%%
+simclr_acc_arr_ema = np.array([ema_vectorized(simclr_vec, alpha=0.4)
+                                   for simclr_vec in simclr_acc_arr])
+figh = plt.figure(figsize=[5, 5])
+plt.plot(simclr_timestep/390, simclr_acc_arr_ema.T, alpha=0.5)
+plt.ylabel("simclr accuracy")
+plt.xlabel("epochs")
+plt.legend(explabels)
+figh.savefig(join(figdir, "train_curve", "foveblur_simclr_curve.png"))
+figh.savefig(join(figdir, "train_curve", "foveblur_simclr_curve.pdf"))
+plt.show()
+#%%
+figh = plt.figure(figsize=[5, 5])
+plt.plot(eval_timestep, train_acc_arr.T, alpha=0.5)
+plt.plot(eval_timestep, test_acc_arr.T, alpha=0.5, linestyle="-.")
+plt.ylabel("eval accuracy")
+plt.xlabel("epochs")
+plt.legend(explabels+explabels)
+figh.savefig(join(figdir, "train_curve", "foveblur_eval_curve.png"))
+figh.savefig(join(figdir, "train_curve", "foveblur_eval_curve.pdf"))
+plt.show()
 #%% Experiment 2: Evaluate Magnification transfomr (Quad)
 runnms = os.listdir(rootdir)
 exp_magnif_expdirs = [*filter(lambda nm:"proj256_eval_magnif_cvr_" in nm or "proj256_eval_magnif_bsl_" in nm, runnms)]
