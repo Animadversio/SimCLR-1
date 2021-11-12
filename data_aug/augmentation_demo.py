@@ -62,12 +62,17 @@ train_dataset = Contrastive_STL10_w_CortMagnif(r"E:\Datasets")
 #%%
 from data_aug.visualize_aug_dataset import visualize_saliency_maps_w_imgs
 figh, _ = visualize_saliency_maps_w_imgs(train_dataset, True, bdr=16,
-                 idxs=[1973,], temperature=[0.1, 0.3, 1, 3, 6, 10], )
+                 idxs=[1973,], temperature=[0.1, 0.3, 0.7, 1, 1.5, 3, 6, 10], )
 figh.savefig(join(figdir, "salmap_demo", "STl10_salmap_density_id01973.png"))
 figh.savefig(join(figdir, "salmap_demo", "STl10_salmap_density_id01973.pdf"))
 #%%
 figh, _ = visualize_saliency_maps_w_imgs(train_dataset, True, bdr=16,
-                 idxs=[58202,], temperature=[0.1, 0.3, 1, 3, 6, 10], )
+                 idxs=[58202,], temperature=[0.1, 0.3, 0.7, 1, 1.5, 3, 6, 10], )
 figh.savefig(join(figdir, "salmap_demo", "STl10_salmap_density_id58202.png"))
 figh.savefig(join(figdir, "salmap_demo", "STl10_salmap_density_id58202.pdf"))
+#%%
+figh, _ = visualize_saliency_maps_w_imgs(train_dataset, True, bdr=16,
+                 idxs=[77493, 131, 58202, 29975,], temperature=[0.7, 1], )
+figh.savefig(join(figdir, "augment_distrib", "STl10_salmap_density_id_77493_131_58202_29975.png"))
+figh.savefig(join(figdir, "augment_distrib", "STl10_salmap_density_id_77493_131_58202_29975.pdf"))
 
