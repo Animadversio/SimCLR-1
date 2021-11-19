@@ -183,6 +183,8 @@ plt.legend(explabels+explabels)
 figh.savefig(join(figdir, "train_curve", "foveblur_eval_curve.png"))
 figh.savefig(join(figdir, "train_curve", "foveblur_eval_curve.pdf"))
 plt.show()
+
+
 #%% Experiment 2: Evaluate Magnification transfomr (Quad)
 runnms = os.listdir(rootdir)
 exp_magnif_expdirs = [*filter(lambda nm:"proj256_eval_magnif_cvr_" in nm or "proj256_eval_magnif_bsl_" in nm, runnms)]
@@ -204,10 +206,6 @@ plt.figure(figsize=[10,10])
 plt.plot(test_acc_arr.T,)
 plt.legend(param_table.expdir.to_list())
 plt.show()
-
-
-
-
 
 
 
