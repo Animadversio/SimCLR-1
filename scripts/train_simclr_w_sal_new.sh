@@ -7,6 +7,7 @@
 #BSUB -R 'gpuhost'
 #BSUB -R 'select[mem>48G]'
 #BSUB -R 'rusage[mem=48GB]'
+#BSUB -N
 #BSUB -M 48GB
 #BSUB -u binxu.wang@wustl.edu
 #BSUB -o  /scratch1/fs1/crponce/simclr_fast_salienc_debug_train.%J.%I
