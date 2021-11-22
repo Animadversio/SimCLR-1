@@ -302,8 +302,13 @@ figh.savefig(join(figdir, "Magnif_simclrAcc-temperature_curve_2.pdf"))
 
 
 #%%
-
-
+runnms = os.listdir(rootdir)
+exp_magnif_T_expdirs = [*filter(lambda nm:"proj256_eval_magnif" in nm and "Nov22" in nm, runnms)]
+train_acc_arr, test_acc_arr, simclr_acc_arr, eval_timestep, simclr_timestep, \
+    param_table = load_format_exps(exp_magnif_T_expdirs, cfgkeys=["cover_ratio", "blur", "fov_size", "K"])
+param_table = param_table.sort_values("K")
+param_table.reset_index(inplace=True)
+param_table.to_csv(join(outdir, "Exp5_fov_K_magnif_sampling.csv"))
 #%%
 
 
