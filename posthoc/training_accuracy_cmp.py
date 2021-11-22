@@ -183,6 +183,8 @@ plt.legend(explabels+explabels)
 figh.savefig(join(figdir, "train_curve", "foveblur_eval_curve.png"))
 figh.savefig(join(figdir, "train_curve", "foveblur_eval_curve.pdf"))
 plt.show()
+
+
 #%% Experiment 2: Evaluate Magnification transfomr (Quad)
 runnms = os.listdir(rootdir)
 exp_magnif_expdirs = [*filter(lambda nm:"proj256_eval_magnif_cvr_" in nm or "proj256_eval_magnif_bsl_" in nm, runnms)]
@@ -204,10 +206,6 @@ plt.figure(figsize=[10,10])
 plt.plot(test_acc_arr.T,)
 plt.legend(param_table.expdir.to_list())
 plt.show()
-
-
-
-
 
 
 
@@ -273,7 +271,7 @@ _, _, _, _, _, param_table_bsl = load_format_exps(exp_magnif_bsl_expdirs, cfgkey
 param_table_bsl.to_csv(join(outdir, "Exp4_salmap_magnif_sampling_baseline.csv"))
 
 #%%
-figh = plt.figure(figsize=[4,5])
+figh = plt.figure(figsize=[3.5,3.])
 plt.plot(param_table.sample_temperature, param_table.train_acc, marker="o", label="train_acc")
 plt.plot(param_table.sample_temperature, param_table.test_acc, marker="o", label="test_acc")
 plt.semilogx()
@@ -284,12 +282,12 @@ plt.ylabel("Linear Eval Accuracy")
 plt.title("Visual Repr Evaluation\nEpoch %d"%eval_timestep[-2])
 plt.legend()
 plt.show()
-figh.savefig(join(figdir, "Magnif_evalAcc-temperature_curve.png"))
-figh.savefig(join(figdir, "Magnif_evalAcc-temperature_curve.pdf"))
+figh.savefig(join(figdir, "Magnif_evalAcc-temperature_curve_2.png"))
+figh.savefig(join(figdir, "Magnif_evalAcc-temperature_curve_2.pdf"))
 # sort_table = param_table.sort_values("sample_temperature")
 
 #%%
-figh = plt.figure(figsize=[4,5])
+figh = plt.figure(figsize=[3.5,3.])
 plt.plot(param_table.sample_temperature, param_table.simclr_acc_ema, marker="o")
 plt.semilogx()
 plt.hlines(param_table_bsl.simclr_acc_ema.mean(), 0, 100, color="darkblue", linestyles=":", label="Test (Uniform Sampling)")
@@ -297,8 +295,8 @@ plt.xlabel("Sampling Temperature")
 plt.ylabel("Simclr Train Accuracy")
 plt.title("Training Objective Accuracy\nStep %d Epoch 99"%simclr_timestep[-2])
 plt.show()
-figh.savefig(join(figdir, "Magnif_simclrAcc-temperature_curve.png"))
-figh.savefig(join(figdir, "Magnif_simclrAcc-temperature_curve.pdf"))
+figh.savefig(join(figdir, "Magnif_simclrAcc-temperature_curve_2.png"))
+figh.savefig(join(figdir, "Magnif_simclrAcc-temperature_curve_2.pdf"))
 
 
 

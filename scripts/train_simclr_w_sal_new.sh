@@ -2,7 +2,7 @@
 #BSUB -n 4
 #BSUB -q general
 #BSUB -G compute-crponce
-#BSUB -J 'simclr_fast_sal_new_train[10-18]'
+#BSUB -J 'simclr_fast_sal_new_train[23-27]'
 #BSUB -gpu "num=1:gmodel=TeslaV100_SXM2_32GB:mode=exclusive_process"
 #BSUB -R 'gpuhost'
 #BSUB -R 'select[mem>48G]'
@@ -42,6 +42,11 @@ param_list=\
 --out_dim 256 --run_label proj256_eval_sal_new_T1.5     --crop_temperature 1.5  
 --out_dim 256 --run_label proj256_eval_sal_new_T2.5     --crop_temperature 2.5  
 --out_dim 256 --run_label proj256_eval_sal_new_T4.5     --crop_temperature 4.5  
+--out_dim 256 --run_label proj256_eval_sal_new_T0.1     --crop_temperature 0.1   
+--out_dim 256 --run_label proj256_eval_sal_new_T0.3     --crop_temperature 0.3  
+--out_dim 256 --run_label proj256_eval_sal_new_T0.7     --crop_temperature 0.7  
+--out_dim 256 --run_label proj256_eval_sal_new_T1.0     --crop_temperature 1.0  
+--out_dim 256 --run_label proj256_eval_sal_new_T100.0    --crop_temperature 100.0  
 '
 
 export extra_param="$(echo "$param_list" | head -n $LSB_JOBINDEX | tail -1)"
