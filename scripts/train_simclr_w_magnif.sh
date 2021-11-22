@@ -2,12 +2,13 @@
 #BSUB -n 4
 #BSUB -q general
 #BSUB -G compute-crponce
-#BSUB -J 'simclr_fast_magnif_exps[37]'
+#BSUB -J 'simclr_fast_magnif_exps[38-54]'
 #BSUB -gpu "num=1:gmodel=TeslaV100_SXM2_32GB:mode=exclusive_process"
 #BSUB -R 'gpuhost'
-#BSUB -R 'select[mem>48G]'
-#BSUB -R 'rusage[mem=48GB]'
-#BSUB -M 48GB
+#BSUB -R 'select[mem>36G]'
+#BSUB -R 'rusage[mem=36GB]'
+#BSUB -N
+#BSUB -M 36GB
 #BSUB -u binxu.wang@wustl.edu
 #BSUB -o  /scratch1/fs1/crponce/simclr_fast_magnif_exps.%J.%I
 #BSUB -a 'docker(pytorchlightning/pytorch_lightning:base-cuda-py3.9-torch1.9)'
@@ -56,6 +57,23 @@ param_list=\
 --run_label proj256_eval_magnif_salmap_T100_0_cvr_0_01-0_35 --magnif --sal_sample --sample_temperature 100.0 --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16
 --run_label proj256_eval_magnif_salmap_T0_03_cvr_0_01-0_35 --magnif --sal_sample --sample_temperature 0.03 --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16
 --run_label proj256_eval_magnif_salmap_flat_cvr_0_01-0_35 --magnif --sal_sample --sal_control --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16
+--run_label proj256_eval_magnif_bsl --crop  
+--run_label proj256_eval_magnif_cvr_0_05-0_70_fov15_K-20 --magnif --cover_ratio 0.05 0.70  --fov_size 15  --K  -20  --sampling_bdr 16  
+--run_label proj256_eval_magnif_cvr_0_05-0_35_fov15_K-20 --magnif --cover_ratio 0.05 0.35  --fov_size 15  --K  -20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-0_35_fov15_K-20 --magnif --cover_ratio 0.01 0.35  --fov_size 15  --K  -20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-1_50_fov15_K-20 --magnif --cover_ratio 0.01 1.50  --fov_size 15  --K  -20  --sampling_bdr 16
+--run_label proj256_eval_magnif_cvr_0_05-0_70_fov15_K-7_5 --magnif --cover_ratio 0.05 0.70  --fov_size 15  --K  -7.5  --sampling_bdr 16  
+--run_label proj256_eval_magnif_cvr_0_05-0_35_fov15_K-7_5 --magnif --cover_ratio 0.05 0.35  --fov_size 15  --K  -7.5  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-0_35_fov15_K-7_5 --magnif --cover_ratio 0.01 0.35  --fov_size 15  --K  -7.5  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-1_50_fov15_K-7_5 --magnif --cover_ratio 0.01 1.50  --fov_size 15  --K  -7.5  --sampling_bdr 16
+--run_label proj256_eval_magnif_cvr_0_05-0_70_fov15_K5 --magnif --cover_ratio 0.05 0.70  --fov_size 15  --K  5  --sampling_bdr 16  
+--run_label proj256_eval_magnif_cvr_0_05-0_35_fov15_K5 --magnif --cover_ratio 0.05 0.35  --fov_size 15  --K  5  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-0_35_fov15_K5 --magnif --cover_ratio 0.01 0.35  --fov_size 15  --K  5  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-1_50_fov15_K5 --magnif --cover_ratio 0.01 1.50  --fov_size 15  --K  5  --sampling_bdr 16
+--run_label proj256_eval_magnif_cvr_0_05-0_70_fov15_K20 --magnif --cover_ratio 0.05 0.70  --fov_size 20  --K  20  --sampling_bdr 16  
+--run_label proj256_eval_magnif_cvr_0_05-0_35_fov15_K20 --magnif --cover_ratio 0.05 0.35  --fov_size 20  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-0_35_fov15_K20 --magnif --cover_ratio 0.01 0.35  --fov_size 20  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-1_50_fov15_K20 --magnif --cover_ratio 0.01 1.50  --fov_size 20  --K  20  --sampling_bdr 16
 '
 
 export extra_param="$(echo "$param_list" | head -n $LSB_JOBINDEX | tail -1)"
