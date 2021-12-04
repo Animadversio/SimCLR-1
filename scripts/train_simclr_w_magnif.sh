@@ -2,7 +2,7 @@
 #BSUB -n 4
 #BSUB -q general
 #BSUB -G compute-crponce
-#BSUB -J 'simclr_fast_magnif_exps[77-80]'
+#BSUB -J 'simclr_fast_magnif_exps[81-96]'
 #BSUB -gpu "num=1:gmodel=TeslaV100_SXM2_32GB:mode=exclusive_process"
 #BSUB -R 'gpuhost'
 #BSUB -R 'select[mem>36G]'
@@ -100,6 +100,22 @@ param_list=\
 --run_label proj256_eval_magnif_cvr_0_05-0_35_fov15_K50_noblur --disable_blur --magnif --cover_ratio 0.05 0.35  --fov_size 15  --K  50  --sampling_bdr 16 
 --run_label proj256_eval_magnif_cvr_0_01-0_35_fov15_K50_noblur --disable_blur --magnif --cover_ratio 0.01 0.35  --fov_size 15  --K  50  --sampling_bdr 16 
 --run_label proj256_eval_magnif_cvr_0_01-1_50_fov15_K50_noblur --disable_blur --magnif --cover_ratio 0.01 1.50  --fov_size 15  --K  50  --sampling_bdr 16
+--run_label proj256_eval_magnif_cvr_0_05-0_70_fov30_K20_noblur --disable_blur --magnif --cover_ratio 0.05 0.70  --fov_size 30  --K  20  --sampling_bdr 16  
+--run_label proj256_eval_magnif_cvr_0_05-0_35_fov30_K20_noblur --disable_blur --magnif --cover_ratio 0.05 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-0_35_fov30_K20_noblur --disable_blur --magnif --cover_ratio 0.01 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-1_50_fov30_K20_noblur --disable_blur --magnif --cover_ratio 0.01 1.50  --fov_size 30  --K  20  --sampling_bdr 16
+--run_label proj256_eval_magnif_cvr_0_05-0_70_fov45_K20_noblur --disable_blur --magnif --cover_ratio 0.05 0.70  --fov_size 45  --K  20  --sampling_bdr 16  
+--run_label proj256_eval_magnif_cvr_0_05-0_35_fov45_K20_noblur --disable_blur --magnif --cover_ratio 0.05 0.35  --fov_size 45  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-0_35_fov45_K20_noblur --disable_blur --magnif --cover_ratio 0.01 0.35  --fov_size 45  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-1_50_fov45_K20_noblur --disable_blur --magnif --cover_ratio 0.01 1.50  --fov_size 45  --K  20  --sampling_bdr 16
+--run_label proj256_eval_magnif_cvr_0_05-0_70_fov45_K-15_noblur --disable_blur --magnif --cover_ratio 0.05 0.70  --fov_size 45  --K  -15  --sampling_bdr 16  
+--run_label proj256_eval_magnif_cvr_0_05-0_35_fov45_K-15_noblur --disable_blur --magnif --cover_ratio 0.05 0.35  --fov_size 45  --K  -15  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-0_35_fov45_K-15_noblur --disable_blur --magnif --cover_ratio 0.01 0.35  --fov_size 45  --K  -15  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-1_50_fov45_K-15_noblur --disable_blur --magnif --cover_ratio 0.01 1.50  --fov_size 45  --K  -15  --sampling_bdr 16
+--run_label proj256_eval_magnif_cvr_0_05-0_70_fov45_K5_noblur --disable_blur --magnif --cover_ratio 0.05 0.70  --fov_size 45  --K  5  --sampling_bdr 16  
+--run_label proj256_eval_magnif_cvr_0_05-0_35_fov45_K5_noblur --disable_blur --magnif --cover_ratio 0.05 0.35  --fov_size 45  --K  5  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-0_35_fov45_K5_noblur --disable_blur --magnif --cover_ratio 0.01 0.35  --fov_size 45  --K  5  --sampling_bdr 16 
+--run_label proj256_eval_magnif_cvr_0_01-1_50_fov45_K5_noblur --disable_blur --magnif --cover_ratio 0.01 1.50  --fov_size 45  --K  5  --sampling_bdr 16
 '
 
 export extra_param="$(echo "$param_list" | head -n $LSB_JOBINDEX | tail -1)"
