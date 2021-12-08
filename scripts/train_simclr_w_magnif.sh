@@ -2,7 +2,7 @@
 #BSUB -n 4
 #BSUB -q general
 #BSUB -G compute-crponce
-#BSUB -J 'simclr_fast_magnif_exps[105-108]'
+#BSUB -J 'simclr_fast_magnif_exps[109-120]'
 #BSUB -gpu "num=1:gmodel=TeslaV100_SXM2_32GB:mode=exclusive_process"
 #BSUB -R 'gpuhost'
 #BSUB -R 'select[mem>36G]'
@@ -128,6 +128,18 @@ param_list=\
 --run_label proj256_eval_magnif_cvr_0_05-0_35_fov30_K20_noblur_RNDrep --randomize_seed --disable_blur --magnif --cover_ratio 0.05 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
 --run_label proj256_eval_magnif_cvr_0_01-0_35_fov30_K20_noblur_RNDrep --randomize_seed --disable_blur --magnif --cover_ratio 0.01 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
 --run_label proj256_eval_magnif_cvr_0_01-1_50_fov30_K20_noblur_RNDrep --randomize_seed --disable_blur --magnif --cover_ratio 0.01 1.50  --fov_size 30  --K  20  --sampling_bdr 16
+--run_label proj256_eval_magnif_salmap_T0_01_cvr_0_05-0_35_fov30_K20_noblur_RND --randomize_seed --disable_blur --magnif --sal_sample --sample_temperature 0.01  --cover_ratio 0.05 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_salmap_T0_1_cvr_0_05-0_35_fov30_K20_noblur_RND --randomize_seed --disable_blur --magnif --sal_sample --sample_temperature 0.1  --cover_ratio 0.05 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_salmap_T0_3_cvr_0_05-0_35_fov30_K20_noblur_RND --randomize_seed --disable_blur --magnif --sal_sample --sample_temperature 0.3  --cover_ratio 0.05 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_salmap_T0_7_cvr_0_05-0_35_fov30_K20_noblur_RND --randomize_seed --disable_blur --magnif --sal_sample --sample_temperature 0.7  --cover_ratio 0.05 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_salmap_T1_0_cvr_0_05-0_35_fov30_K20_noblur_RND --randomize_seed --disable_blur --magnif --sal_sample --sample_temperature 1.0  --cover_ratio 0.05 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_salmap_T1_5_cvr_0_05-0_35_fov30_K20_noblur_RND --randomize_seed --disable_blur --magnif --sal_sample --sample_temperature 1.5  --cover_ratio 0.05 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_salmap_T3_0_cvr_0_05-0_35_fov30_K20_noblur_RND --randomize_seed --disable_blur --magnif --sal_sample --sample_temperature 3.0  --cover_ratio 0.05 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_salmap_T4_5_cvr_0_05-0_35_fov30_K20_noblur_RND --randomize_seed --disable_blur --magnif --sal_sample --sample_temperature 4.5  --cover_ratio 0.05 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_salmap_T10_0_cvr_0_05-0_35_fov30_K20_noblur_RND --randomize_seed --disable_blur --magnif --sal_sample --sample_temperature 10.0  --cover_ratio 0.05 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_salmap_T30_0_cvr_0_05-0_35_fov30_K20_noblur_RND --randomize_seed --disable_blur --magnif --sal_sample --sample_temperature 30.0  --cover_ratio 0.05 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_salmap_T100_0_cvr_0_05-0_35_fov30_K20_noblur_RND --randomize_seed --disable_blur --magnif --sal_sample --sample_temperature 100.0   --cover_ratio 0.05 0.35  --fov_size 30  --K  20  --sampling_bdr 16 
+--run_label proj256_eval_magnif_salmap_flat_cvr_0_05-0_35_fov30_K20_noblur_RND  --randomize_seed --disable_blur --magnif --sal_sample --sal_control --cover_ratio 0.05 0.35  --fov_size 30  --K  20  --sampling_bdr 16
 '
 
 export extra_param="$(echo "$param_list" | head -n $LSB_JOBINDEX | tail -1)"
